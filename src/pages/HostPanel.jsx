@@ -4,13 +4,18 @@ import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc } from 'firebas
 import { db } from '../firebase';
 import { Share2, Play, Square, Dices, Users, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useSettings } from '../context/SettingsContext';
+
 
 const HostPanel = () => {
   const { gameId } = useParams();
   const [gameState, setGameState] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const [intervalTime, setIntervalTime] = useState(5);
+  const [activeReactions, setActiveReactions] = useState([]);
+  const [autoDrawInterval, setAutoDrawInterval] = useState(null);
+  const { playSound } = useSettings();
+
 
   const gameStateRef = useRef(null);
   useEffect(() => {
@@ -25,6 +30,15 @@ const HostPanel = () => {
         setGameState(data);
         if (data.status === 'finished' && data.winners?.length > 0) {
           triggerWinAnimation();
+        }
+
+        // Manejar reacciones entrantes
+        if (data.latestReaction && data.latestReaction.timestamp > Date.now() - 3000) {
+          const id = Date.now() + Math.random();
+          setActiveReactions(prev => [...prev, { id, emoji: data.latestReaction.emoji }]);
+          setTimeout(() => {
+            setActiveReactions(prev => prev.filter(r => r.id !== id));
+          }, 2000);
         }
       }
     });
@@ -47,6 +61,7 @@ const HostPanel = () => {
   }, [gameId]);
 
   const triggerWinAnimation = () => {
+    playSound('win');
     const duration = 5 * 1000;
     const end = Date.now() + duration;
     const frame = () => {
@@ -58,6 +73,7 @@ const HostPanel = () => {
   };
 
   const startGame = async () => {
+    playSound('start');
     await updateDoc(doc(db, 'games', gameId), { status: 'playing', calledNumbers: [] });
   };
 
@@ -103,8 +119,9 @@ const HostPanel = () => {
       nextNum = Math.floor(Math.random() * maxNumber) + 1;
     } while (calledSet.has(nextNum));
 
+    playSound('pop');
     await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
-  }, [gameId]);
+  }, [gameId, playSound]);
 
   const toggleAutoDraw = () => {
     if (autoDrawInterval) {
@@ -148,8 +165,31 @@ const HostPanel = () => {
   }
 
   return (
-    <div className="app-container" style={{ maxWidth: '1000px' }}>
+    <div className="app-container" style={{ maxWidth: '1000px', position: 'relative' }}>
       
+      {/* Contenedor de reacciones flotantes para el anfitrión */}
+      <div style={{ position: 'fixed', bottom: '10px', left: '20px', pointerEvents: 'none', zIndex: 100 }}>
+        {activeReactions.map(r => (
+          <div key={r.id} style={{
+            fontSize: '4rem',
+            position: 'absolute',
+            bottom: '0',
+            left: `${Math.random() * 100}px`,
+            animation: 'floatUp 2s ease-out forwards',
+            opacity: 1
+          }}>
+            {r.emoji}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(-300px) scale(1.5); opacity: 0; }
+        }
+      `}</style>
+
       {/* HEADER DEL ANFITRIÓN */}
       <div className="card flex justify-between items-center animate-pop" style={{ padding: '1.5rem 2rem' }}>
         <div>

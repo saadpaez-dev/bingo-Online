@@ -3,18 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
 import { Play, PlusCircle, Sparkles, Hash } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+
 
 const Home = () => {
   const [gameMode, setGameMode] = useState(75);
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { playSound } = useSettings();
 
   const generateGameId = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
   const handleCreateGame = async () => {
+    playSound('pop');
     setLoading(true);
     try {
       const user = await loginAnonymously();
@@ -40,6 +44,7 @@ const Home = () => {
   const handleJoinGame = (e) => {
     e.preventDefault();
     if (joinCode.trim().length > 0) {
+      playSound('pop');
       navigate(`/play/${joinCode.trim().toUpperCase()}`);
     }
   };
@@ -65,7 +70,7 @@ const Home = () => {
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div 
-              onClick={() => setGameMode(75)}
+              onClick={() => { setGameMode(75); playSound('draw'); }}
               style={{
                 border: `2px solid ${gameMode === 75 ? 'var(--primary)' : 'var(--border-color)'}`,
                 backgroundColor: gameMode === 75 ? 'rgba(79, 70, 229, 0.05)' : 'var(--bg-app)',
@@ -82,7 +87,7 @@ const Home = () => {
             </div>
             
             <div 
-              onClick={() => setGameMode(90)}
+              onClick={() => { setGameMode(90); playSound('draw'); }}
               style={{
                 border: `2px solid ${gameMode === 90 ? 'var(--primary)' : 'var(--border-color)'}`,
                 backgroundColor: gameMode === 90 ? 'rgba(79, 70, 229, 0.05)' : 'var(--bg-app)',
