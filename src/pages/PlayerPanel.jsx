@@ -1,0 +1,305 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { db, loginAnonymously } from '../firebase';
+import { generateCard75, generateCard90, validateBingo75, validateBingo90 } from '../utils/bingo';
+import BingoCard75 from '../components/BingoCard75';
+import BingoCard90 from '../components/BingoCard90';
+import { Trophy, RefreshCw, User, CirclePlay } from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+const PlayerPanel = () => {
+  const { gameId } = useParams();
+  const [name, setName] = useState('');
+  const [hasJoined, setHasJoined] = useState(false);
+  const [gameState, setGameState] = useState(null);
+  const [playerData, setPlayerData] = useState(null);
+  const [markedNumbers, setMarkedNumbers] = useState(new Set());
+  const [userId, setUserId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Generamos un avatar aleatorio simple (emoji) por sesión
+  const [avatar] = useState(() => {
+    const emojis = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐵', '🦄', '🐲'];
+    return emojis[Math.floor(Math.random() * emojis.length)];
+  });
+
+  useEffect(() => {
+    loginAnonymously().then(user => setUserId(user.uid));
+
+    const gameRef = doc(db, 'games', gameId);
+    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setGameState(data);
+        if (data.status === 'finished' && data.winners?.includes(name)) {
+          triggerWinAnimation();
+        }
+      } else {
+        setErrorMsg('La sala no existe.');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [gameId, name]);
+
+  useEffect(() => {
+    if (!userId || !hasJoined) return;
+
+    const playerRef = doc(db, 'games', gameId, 'players', userId);
+    const unsubscribe = onSnapshot(playerRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setPlayerData(docSnap.data());
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userId, hasJoined, gameId]);
+
+  const triggerWinAnimation = () => {
+    const duration = 5 * 1000;
+    const end = Date.now() + duration;
+    const frame = () => {
+      confetti({ particleCount: 8, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#4F46E5', '#FACC15', '#22C55E'] });
+      confetti({ particleCount: 8, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#4F46E5', '#FACC15', '#22C55E'] });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+  };
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    const card = gameState.mode === 75 ? generateCard75() : generateCard90();
+    
+    await setDoc(doc(db, 'games', gameId, 'players', userId), {
+      name: name.trim(),
+      avatar: avatar,
+      card: card,
+      bingoClaimed: false,
+      isValidated: false
+    });
+    
+    setHasJoined(true);
+  };
+
+  const changeCard = async () => {
+    if (gameState.status !== 'waiting') return;
+    const newCard = gameState.mode === 75 ? generateCard75() : generateCard90();
+    setMarkedNumbers(new Set());
+    await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+      card: newCard
+    });
+  };
+
+  const toggleMark = (num) => {
+    if (num === 'FREE' || num === null) return;
+    setMarkedNumbers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(num)) newSet.delete(num);
+      else newSet.add(num);
+      return newSet;
+    });
+  };
+
+  const claimBingo = async () => {
+    if (gameState.status !== 'playing') {
+      alert("La partida no está en curso.");
+      return;
+    }
+
+    const isValid = gameState.mode === 75 
+      ? validateBingo75(playerData.card, gameState.calledNumbers)
+      : validateBingo90(playerData.card, gameState.calledNumbers);
+
+    if (isValid) {
+      await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        bingoClaimed: true,
+        isValidated: true
+      });
+    } else {
+      alert("¡Bingo Inválido! Revisa bien tu cartón.");
+      await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        bingoClaimed: true,
+        isValidated: false
+      });
+      setTimeout(() => {
+        updateDoc(doc(db, 'games', gameId, 'players', userId), {
+          bingoClaimed: false
+        });
+      }, 3000);
+    }
+  };
+
+  if (errorMsg) return <div className="text-center mt-4"><h3>{errorMsg}</h3></div>;
+  if (!gameState) return <div className="text-center mt-4">Cargando sala...</div>;
+
+  // PANTALLA DE INGRESO
+  if (!hasJoined) {
+    return (
+      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div className="card animate-pop" style={{ maxWidth: '400px', width: '100%', padding: '2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{avatar}</div>
+            <h2 style={{ fontSize: '1.5rem' }}>Unirse a Sala <span style={{ color: 'var(--primary)' }}>{gameId}</span></h2>
+          </div>
+          <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <input 
+              type="text" 
+              className="input" 
+              placeholder="Escribe tu nombre" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={15}
+              style={{ textAlign: 'center' }}
+            />
+            <button type="submit" className="btn btn-primary" style={{ padding: '1rem', fontSize: '1.1rem' }}>
+              Entrar a la partida
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // PANTALLA DE JUEGO
+  const called = gameState.calledNumbers || [];
+  const currentNumber = called.length > 0 ? called[called.length - 1] : null;
+
+  // Letra para 75 bolas
+  let currentLetter = '';
+  if (gameState.mode === 75 && currentNumber) {
+    if (currentNumber <= 15) currentLetter = 'B';
+    else if (currentNumber <= 30) currentLetter = 'I';
+    else if (currentNumber <= 45) currentLetter = 'N';
+    else if (currentNumber <= 60) currentLetter = 'G';
+    else currentLetter = 'O';
+  }
+
+  return (
+    <div className="app-container animate-pop">
+      
+      {/* HEADER DEL JUGADOR */}
+      <div className="card flex justify-between items-center" style={{ padding: '1rem 1.5rem', borderRadius: '1rem' }}>
+        <div className="flex items-center gap-4">
+          <div style={{ fontSize: '2.5rem', backgroundColor: 'var(--bg-app)', padding: '0.5rem', borderRadius: '50%', boxShadow: 'var(--shadow-sm)' }}>
+            {avatar}
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{name}</h2>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold' }}>Sala {gameId}</span>
+              <span>•</span>
+              <span style={{ 
+                color: gameState.status === 'playing' ? 'var(--success)' : gameState.status === 'waiting' ? 'var(--warning)' : 'var(--primary)',
+                fontWeight: '600'
+              }}>
+                {gameState.status === 'playing' ? 'En curso' : gameState.status === 'waiting' ? 'Esperando...' : 'Finalizada'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ÁREA DE ÚLTIMA BOLA Y ESTADO */}
+      {gameState.status === 'playing' && (
+        <div className="card text-center" style={{ padding: '2rem 1rem', background: 'linear-gradient(135deg, var(--bg-card), var(--bg-app))' }}>
+          
+          <h3 className="text-muted" style={{ marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.9rem' }}>
+            Última Bola
+          </h3>
+          
+          <div key={currentNumber} className="animate-pop" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '140px',
+            height: '140px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            color: 'white',
+            boxShadow: '0 10px 25px rgba(79, 70, 229, 0.4)',
+            border: '8px solid white',
+            marginBottom: '2rem'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
+              {currentLetter && <span style={{ fontSize: '1.5rem', fontWeight: 'bold', opacity: 0.9 }}>{currentLetter}</span>}
+              <span style={{ fontSize: '4.5rem', fontWeight: '800' }}>{currentNumber}</span>
+            </div>
+          </div>
+
+          {/* Historial (Últimas 5) */}
+          <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
+            {called.slice(-6, -1).reverse().map((num, i) => (
+              <div key={`${num}-${i}`} className="animate-pop" style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'var(--bg-card)',
+                border: '2px solid var(--border-color)',
+                borderRadius: '999px',
+                fontWeight: 'bold',
+                color: 'var(--text-muted)',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                {num}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MENSAJE DE VICTORIA */}
+      {gameState.status === 'finished' && (
+        <div className="card text-center animate-pop" style={{ padding: '3rem 1rem', background: 'linear-gradient(135deg, var(--success), #059669)', color: 'white' }}>
+          <Trophy size={64} style={{ margin: '0 auto 1rem', animation: 'pulse 2s infinite' }} />
+          <h2 style={{ fontSize: '2.5rem', color: 'white', marginBottom: '1rem' }}>¡Juego Terminado!</h2>
+          {gameState.winners?.includes(name) ? (
+            <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>¡ERES EL GANADOR! 🎉</p>
+          ) : (
+            <p style={{ fontSize: '1.2rem' }}>Ha ganado: <strong>{gameState.winners?.join(', ')}</strong></p>
+          )}
+        </div>
+      )}
+
+      {/* EL CARTÓN */}
+      <div className="card" style={{ padding: '1.5rem 1rem' }}>
+        {playerData?.card && (
+          gameState.mode === 75 
+            ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+            : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+        )}
+      </div>
+
+      {/* CONTROLES INFERIORES */}
+      <div className="flex justify-center gap-4 mt-2 mb-8">
+        {gameState.status === 'waiting' && (
+          <button className="btn btn-secondary" onClick={changeCard} style={{ padding: '1rem 1.5rem', fontSize: '1.1rem' }}>
+            <RefreshCw size={20} /> Cambiar Cartón
+          </button>
+        )}
+
+        <button 
+          className="btn" 
+          onClick={claimBingo}
+          disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
+          style={{ 
+            padding: '1rem 2rem', 
+            fontSize: '1.25rem', 
+            background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+            color: 'white',
+            boxShadow: '0 8px 20px rgba(245, 158, 11, 0.4)',
+            border: 'none',
+            borderRadius: 'var(--radius-full)'
+          }}
+        >
+          <Trophy size={24} /> 
+          {playerData?.bingoClaimed && !playerData?.isValidated ? 'Verificando...' : '¡BINGO!'}
+        </button>
+      </div>
+
+    </div>
+  );
+};
+
+export default PlayerPanel;
