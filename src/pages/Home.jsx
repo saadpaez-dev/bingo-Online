@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
-// Filigrana barroca ornamental para las esquinas de la tarjeta
 const FiligreeCorner = ({ position }) => (
   <svg 
     className={`filigree-corner ${position}`} 
@@ -34,7 +33,6 @@ const FiligreeCorner = ({ position }) => (
   </svg>
 );
 
-// Separador de cuentas de ábaco con varilla de bronce
 const AbacusDivider = () => {
   const beadSizes = [
     'small', 'small', 'medium', 'medium', 'medium', 
@@ -58,6 +56,14 @@ const Home = () => {
   const [gameMode, setGameMode] = useState(75);
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Ajustes de Torneo y Modalidad de Pago
+  const [showAdvancedRules, setShowAdvancedRules] = useState(false);
+  const [targetWins, setTargetWins] = useState(3);
+  const [paymentMode, setPaymentMode] = useState(false);
+  const [cardPrice, setCardPrice] = useState('$5.000 COP');
+  const [prizeType, setPrizeType] = useState('chips'); // 'chips' | 'cash'
+
   const navigate = useNavigate();
   const { playSound } = useSettings();
 
@@ -76,6 +82,11 @@ const Home = () => {
         hostId: user.uid,
         status: 'waiting',
         mode: gameMode,
+        targetWins: Number(targetWins) || 3,
+        paymentMode: !!paymentMode,
+        cardPrice: paymentMode ? cardPrice : 'Gratis',
+        prizeType: prizeType,
+        currentRound: 1,
         calledNumbers: [],
         createdAt: new Date().toISOString()
       });
@@ -108,13 +119,12 @@ const Home = () => {
       {/* TARJETA DE PERGAMINO VINTAGE */}
       <div className="vintage-parchment-card animate-pop">
         
-        {/* Filigranas doradas barrocas en las 4 esquinas */}
         <FiligreeCorner position="top-left" />
         <FiligreeCorner position="top-right" />
         <FiligreeCorner position="bottom-left" />
         <FiligreeCorner position="bottom-right" />
 
-        {/* Medallón central superior en oro y esmalte burdeos */}
+        {/* Medallón central */}
         <div className="vintage-medallion">
           <svg className="vintage-medallion-star" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2 L14 9 L21 11 L15 15 L17 22 L12 18 L7 22 L9 15 L3 11 L10 9 Z" />
@@ -133,7 +143,6 @@ const Home = () => {
         {/* SECCIÓN CREAR PARTIDA */}
         <div style={{ marginBottom: '1.25rem' }}>
           <div className="vintage-section-header">
-            {/* Icono de engranajes dorados */}
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C59B27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="vintage-section-icon">
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -143,8 +152,6 @@ const Home = () => {
 
           {/* Bolas 3D de madera tallada (75 & 90) */}
           <div className="vintage-balls-selector">
-            
-            {/* Bola 75 */}
             <div 
               className={`vintage-ball-wrapper ${gameMode === 75 ? 'active' : ''}`}
               onClick={() => { setGameMode(75); playSound('draw'); }}
@@ -157,7 +164,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Bola 90 */}
             <div 
               className={`vintage-ball-wrapper ${gameMode === 90 ? 'active' : ''}`}
               onClick={() => { setGameMode(90); playSound('draw'); }}
@@ -169,7 +175,163 @@ const Home = () => {
                 Bolas (Cartón)
               </div>
             </div>
+          </div>
 
+          {/* Opciones de Torneo y Pago (Expandible) */}
+          <div style={{ marginBottom: '1.25rem', padding: '0 0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedRules(prev => !prev)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--burgundy-primary)',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: '800',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                textDecoration: 'underline'
+              }}
+            >
+              <Trophy size={16} />
+              {showAdvancedRules ? 'Ocultar Reglas de Torneo & Pago' : '⚙️ Configurar Torneo & Modalidad de Pago'}
+              {showAdvancedRules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {showAdvancedRules && (
+              <div 
+                className="animate-pop"
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '1rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                  border: '1.5px solid var(--gold-brass)',
+                  textAlign: 'left',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}
+              >
+                {/* Meta de Victorias */}
+                <div>
+                  <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
+                    🏆 Meta del Torneo (El primero que gane):
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {[
+                      { val: 1, label: '1 Ronda' },
+                      { val: 3, label: '3 Rondas (Torneo)' },
+                      { val: 5, label: '5 Rondas (Gran Final)' }
+                    ].map(opt => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => setTargetWins(opt.val)}
+                        style={{
+                          flex: 1,
+                          padding: '0.4rem 0.2rem',
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-serif)',
+                          fontWeight: '800',
+                          borderRadius: '6px',
+                          border: targetWins === opt.val ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                          backgroundColor: targetWins === opt.val ? 'var(--burgundy-primary)' : '#FFF',
+                          color: targetWins === opt.val ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Modalidad de Pago */}
+                <div>
+                  <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
+                    🪙 Modalidad de Entrada:
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMode(false); setPrizeType('chips'); }}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem',
+                        fontSize: '0.8rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '800',
+                        borderRadius: '6px',
+                        border: !paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                        backgroundColor: !paymentMode ? 'var(--burgundy-primary)' : '#FFF',
+                        color: !paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <Coins size={15} /> Fichas de Casino (Gratis)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMode(true); setPrizeType('cash'); }}
+                      style={{
+                        flex: 1,
+                        padding: '0.45rem',
+                        fontSize: '0.8rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '800',
+                        borderRadius: '6px',
+                        border: paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                        backgroundColor: paymentMode ? 'var(--burgundy-primary)' : '#FFF',
+                        color: paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <DollarSign size={15} /> De Pago (Tarjetón)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Valor del Cartón (si es de pago) */}
+                {paymentMode && (
+                  <div className="animate-pop">
+                    <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.8rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.2rem' }}>
+                      💵 Valor del Tarjetón / Apuesta:
+                    </label>
+                    <input
+                      type="text"
+                      value={cardPrice}
+                      onChange={e => setCardPrice(e.target.value)}
+                      placeholder="Ej: $5.000 COP o $10 USD"
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem 0.75rem',
+                        fontSize: '0.85rem',
+                        borderRadius: '6px',
+                        border: '1.5px solid var(--gold-brass)',
+                        backgroundColor: '#FFF',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: '700'
+                      }}
+                    />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem', display: 'block' }}>
+                      * El cartón de los jugadores quedará bloqueado hasta que reporten el pago y tú lo apruebes.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Botón 3D Burdeos Imperial */}
@@ -188,7 +350,6 @@ const Home = () => {
         {/* SECCIÓN UNIRSE CON CÓDIGO */}
         <div style={{ marginTop: '1.25rem' }}>
           <div className="vintage-section-header" style={{ marginBottom: '1rem' }}>
-            {/* Florón decorativo */}
             <svg width="22" height="22" viewBox="0 0 24 24" fill="#5C1D24" stroke="#C59B27" strokeWidth="1.5" className="vintage-section-icon">
               <circle cx="12" cy="7" r="4" />
               <circle cx="12" cy="17" r="4" />
@@ -199,16 +360,13 @@ const Home = () => {
             <span>Unirse con Código</span>
           </div>
 
-          {/* Formulario con ventanilla de latón */}
           <form onSubmit={handleJoinGame} className="vintage-code-slot-container">
             <div className="vintage-brass-slot">
-              {/* 4 tornillos en esquinas */}
               <div className="slot-screw tl" />
               <div className="slot-screw tr" />
               <div className="slot-screw bl" />
               <div className="slot-screw br" />
 
-              {/* Ventanilla interior con papel estarcido */}
               <div className="vintage-slot-window">
                 <input 
                   type="text" 

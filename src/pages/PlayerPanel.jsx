@@ -6,7 +6,8 @@ import { generateCard75, generateCard90, validateBingo75, validateBingo90 } from
 import BingoCard75 from '../components/BingoCard75';
 import BingoCard90 from '../components/BingoCard90';
 import ChatBox from '../components/Chat/ChatBox';
-import { Trophy, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldAlert } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 
@@ -113,6 +114,7 @@ const PlayerPanel = () => {
     if (!name.trim()) return;
 
     const card = gameState.mode === 75 ? generateCard75() : generateCard90();
+    const isPaymentRequired = !!gameState.paymentMode;
     
     await setDoc(doc(db, 'games', gameId, 'players', userId), {
       name: name.trim(),
@@ -120,10 +122,19 @@ const PlayerPanel = () => {
       isCustomAvatar: !!customAvatar,
       card: card,
       bingoClaimed: false,
-      isValidated: false
+      isValidated: false,
+      wins: 0,
+      paymentStatus: isPaymentRequired ? 'unpaid' : 'approved'
     });
     
     setHasJoined(true);
+  };
+
+  const notifyPayment = async () => {
+    playSound('pop');
+    await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+      paymentStatus: 'pending_approval'
+    });
   };
 
   const handleImageUpload = (e) => {
@@ -175,6 +186,13 @@ const PlayerPanel = () => {
 
   const toggleMark = (num) => {
     if (num === 'FREE' || num === null) return;
+    
+    // Bloquear marcado si el cartón no está pagado/aprobado
+    if (gameState?.paymentMode && playerData?.paymentStatus !== 'approved') {
+      alert("Tu cartón está bloqueado. Debes confirmar tu pago y esperar la aprobación del anfitrión.");
+      return;
+    }
+
     playSound('draw');
     setMarkedNumbers(prev => {
       const newSet = new Set(prev);
@@ -187,6 +205,11 @@ const PlayerPanel = () => {
   const claimBingo = async () => {
     if (gameState.status !== 'playing') {
       alert("La partida no está en curso.");
+      return;
+    }
+
+    if (gameState?.paymentMode && playerData?.paymentStatus !== 'approved') {
+      alert("No puedes cantar Bingo con un cartón bloqueado pendiente de pago.");
       return;
     }
 
@@ -235,7 +258,7 @@ const PlayerPanel = () => {
   if (errorMsg) return <div className="text-center mt-4" style={{ color: '#fff' }}><h3>{errorMsg}</h3></div>;
   if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
 
-  // PANTALLA DE INGRESO (ESTILO PERGAMINO VINTAGE)
+  // PANTALLA DE INGRESO (PERGAMINO VINTAGE)
   if (!hasJoined) {
     return (
       <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
@@ -283,7 +306,9 @@ const PlayerPanel = () => {
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', color: 'var(--text-vintage-dark)', fontWeight: '800' }}>
               Unirse a Sala <span style={{ color: 'var(--burgundy-primary)' }}>{gameId}</span>
             </h2>
-            <p className="vintage-subtitle">Toma asiento en la mesa familiar</p>
+            <p className="vintage-subtitle">
+              {gameState.paymentMode ? `Modalidad: De Pago (${gameState.cardPrice})` : 'Modalidad: Fichas de Casino (Gratis)'}
+            </p>
           </div>
 
           <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
@@ -316,6 +341,10 @@ const PlayerPanel = () => {
 
   const called = gameState.calledNumbers || [];
   const currentNumber = called.length > 0 ? called[called.length - 1] : null;
+  const targetWins = gameState.targetWins || 3;
+  const currentRound = gameState.currentRound || 1;
+  const isCardLocked = gameState.paymentMode && playerData?.paymentStatus !== 'approved';
+  const isPaymentPending = playerData?.paymentStatus === 'pending_approval';
 
   let currentLetter = '';
   if (gameState.mode === 75 && currentNumber) {
@@ -329,23 +358,10 @@ const PlayerPanel = () => {
   return (
     <div className="app-container animate-pop" style={{ position: 'relative' }}>
       
-      {/* Reacciones flotantes */}
-      <div style={{ position: 'fixed', bottom: '100px', right: '20px', pointerEvents: 'none', zIndex: 100 }}>
-        {activeReactions.map(r => (
-          <div key={r.id} style={{
-            fontSize: '3.2rem',
-            position: 'absolute',
-            bottom: '0',
-            right: `${Math.random() * 50}px`,
-            animation: 'floatUp 2s ease-out forwards',
-            opacity: 1
-          }}>
-            {r.emoji}
-          </div>
-        ))}
-      </div>
+      {/* Comentarios en vivo estilo Streamer en el lateral */}
+      <LiveCommentsOverlay gameId={gameId} />
 
-      {/* HEADER DEL JUGADOR ESTILO PERGAMINO */}
+      {/* HEADER DEL JUGADOR CON PODIO PERSONAL Y SALA */}
       <div className="card flex justify-between items-center" style={{
         padding: '0.85rem 1.5rem',
         borderRadius: '12px',
@@ -374,7 +390,7 @@ const PlayerPanel = () => {
           </div>
           <div>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', margin: 0, fontWeight: '800' }}>{name}</h2>
-            <div style={{ fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <span className="vintage-brass-plaque" style={{ padding: '0.15rem 0.6rem', fontSize: '0.75rem', margin: 0 }}>
                 Sala {gameId}
               </span>
@@ -383,10 +399,23 @@ const PlayerPanel = () => {
                 fontWeight: '700',
                 fontFamily: 'var(--font-serif)'
               }}>
-                {gameState.status === 'playing' ? 'En Curso' : gameState.status === 'waiting' ? 'Esperando inicio...' : 'Finalizada'}
+                Ronda {currentRound} • {gameState.status === 'playing' ? 'En Curso' : gameState.status === 'waiting' ? 'Esperando sorteo' : 'Finalizada'}
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Marcador de Victorias del Jugador */}
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
+            <Trophy size={18} color="#C59B27" />
+            <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
+              {playerData?.wins || 0} / {targetWins}
+            </span>
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+            Meta del Torneo
+          </span>
         </div>
       </div>
 
@@ -408,7 +437,6 @@ const PlayerPanel = () => {
             Última Bola Sorteada
           </h3>
           
-          {/* Bola gigante 3D de madera */}
           <div key={currentNumber} className="animate-pop" style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -433,7 +461,7 @@ const PlayerPanel = () => {
                 fontFamily: 'var(--font-serif)', 
                 fontSize: '4.2rem', 
                 fontWeight: '900', 
-                textShadow: '0 2px 4px rgba(0,0,0,0.95), 0 -1px 0 rgba(255,255,255,0.2)' 
+                textShadow: '0 2px 4px rgba(0,0,0,0.95)' 
               }}>
                 {currentNumber}
               </span>
@@ -461,8 +489,86 @@ const PlayerPanel = () => {
         </div>
       )}
 
-      {/* CARTÓN DE BINGO */}
-      <div style={{ margin: '0 auto', width: '100%' }}>
+      {/* =========================================================
+         CARTÓN DE BINGO CON CANDADO/BLOQUEO DE PAGO
+         ========================================================= */}
+      <div style={{ margin: '0 auto', width: '100%', position: 'relative' }}>
+        
+        {/* Capa de Bloqueo si requiere pago y no está aprobado */}
+        {isCardLocked && (
+          <div 
+            className="animate-pop"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(30, 15, 8, 0.88)',
+              backdropFilter: 'blur(6px)',
+              borderRadius: '14px',
+              zIndex: 30,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1.5rem',
+              textAlign: 'center',
+              border: '3px solid var(--gold-primary)'
+            }}
+          >
+            <div style={{
+              width: '74px',
+              height: '74px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #8B2834 0%, var(--burgundy-primary) 65%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '1rem',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.6)'
+            }}>
+              <Lock size={36} color="var(--gold-highlight)" />
+            </div>
+
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', color: 'var(--text-gold-emboss)', fontWeight: '900', marginBottom: '0.3rem' }}>
+              Cartón Bloqueado
+            </h3>
+
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', color: '#E8D5B7', maxWidth: '340px', marginBottom: '1.25rem', lineHeight: 1.35 }}>
+              Esta partida requiere el pago de tu entrada <strong style={{ color: 'var(--gold-highlight)' }}>({gameState.cardPrice})</strong> para poder jugar y marcar números.
+            </p>
+
+            {isPaymentPending ? (
+              <div style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                border: '1.5px solid #F59E0B',
+                borderRadius: '8px',
+                padding: '0.75rem 1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                color: '#FDE68A'
+              }}>
+                <Clock size={20} />
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.92rem', fontWeight: '700' }}>
+                  Esperando que el anfitrión apruebe tu pago...
+                </span>
+              </div>
+            ) : (
+              <button 
+                className="btn-vintage-burgundy"
+                onClick={notifyPayment}
+                style={{ width: '100%', maxWidth: '320px', padding: '0.9rem' }}
+              >
+                <CheckCircle size={20} /> Ya realicé mi pago / Confirmar
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Componente del Cartón */}
         {playerData?.card && (
           gameState.mode === 75 
             ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
@@ -505,7 +611,12 @@ const PlayerPanel = () => {
         {/* Botones de acción */}
         <div className="flex justify-center gap-4" style={{ width: '100%', flexWrap: 'wrap' }}>
           {gameState.status === 'waiting' && (
-            <button className="btn btn-secondary" onClick={changeCard} style={{ padding: '0.85rem 1.75rem', fontSize: '1.1rem' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={changeCard} 
+              disabled={isCardLocked}
+              style={{ padding: '0.85rem 1.75rem', fontSize: '1.1rem' }}
+            >
               <RefreshCw size={18} /> Cambiar Cartón
             </button>
           )}
@@ -513,7 +624,7 @@ const PlayerPanel = () => {
           <button 
             className="btn-vintage-burgundy" 
             onClick={claimBingo}
-            disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
+            disabled={gameState.status !== 'playing' || playerData?.bingoClaimed || isCardLocked}
             style={{ 
               maxWidth: '340px',
               padding: '0.95rem 2rem',
@@ -536,13 +647,6 @@ const PlayerPanel = () => {
           isHost: false
         }}
       />
-
-      <style>{`
-        @keyframes floatUp {
-          0% { transform: translateY(0) scale(1); opacity: 1; }
-          100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 };
