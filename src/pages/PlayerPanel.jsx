@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
 import { generateCard75, generateCard90, validateBingo75, validateBingo90 } from '../utils/bingo';
 import BingoCard75 from '../components/BingoCard75';
@@ -237,22 +237,22 @@ const PlayerPanel = () => {
   };
 
   const sendReaction = async (emoji) => {
-    showFloatingReaction(emoji);
-    await updateDoc(doc(db, 'games', gameId), {
-      latestReaction: {
-        emoji,
-        userId,
-        timestamp: Date.now()
-      }
-    });
-  };
-
-  const showFloatingReaction = (emoji) => {
-    const id = Date.now() + Math.random();
-    setActiveReactions(prev => [...prev, { id, emoji }]);
-    setTimeout(() => {
-      setActiveReactions(prev => prev.filter(r => r.id !== id));
-    }, 2000);
+    playSound('pop');
+    try {
+      const messagesRef = collection(db, 'games', gameId, 'messages');
+      await addDoc(messagesRef, {
+        text: emoji,
+        isReaction: true,
+        senderName: name || 'Jugador',
+        avatar: playerData?.avatar || avatar,
+        isCustomAvatar: !!playerData?.isCustomAvatar,
+        isHost: false,
+        timestamp: serverTimestamp(),
+        createdAt: Date.now()
+      });
+    } catch (e) {
+      console.error('Error enviando reacción en streaming:', e);
+    }
   };
 
   if (errorMsg) return <div className="text-center mt-4" style={{ color: '#fff' }}><h3>{errorMsg}</h3></div>;

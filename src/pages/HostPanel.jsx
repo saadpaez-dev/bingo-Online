@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -162,6 +162,24 @@ const HostPanel = () => {
       await updateDoc(doc(db, 'games', gameId, 'players', p.id), {
         paymentStatus: 'approved'
       });
+    }
+  };
+
+  const sendReaction = async (emoji) => {
+    playSound('pop');
+    try {
+      const messagesRef = collection(db, 'games', gameId, 'messages');
+      await addDoc(messagesRef, {
+        text: emoji,
+        isReaction: true,
+        senderName: 'Anfitrión',
+        avatar: '👑',
+        isHost: true,
+        timestamp: serverTimestamp(),
+        createdAt: Date.now()
+      });
+    } catch (e) {
+      console.error('Error enviando reacción desde Host:', e);
     }
   };
 
@@ -543,6 +561,38 @@ const HostPanel = () => {
                     {autoDrawInterval ? <Square size={16} /> : <Play size={16} />}
                     {autoDrawInterval ? 'Pausar' : 'Sorteo Automático'}
                   </button>
+                </div>
+
+                {/* Barra de Reacciones Live Stream para el Anfitrión */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.85rem' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.75rem', 
+                    padding: '0.35rem 1rem', 
+                    borderRadius: '999px',
+                    background: '#FFF',
+                    border: '1.5px solid var(--gold-brass)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.15)'
+                  }}>
+                    {['👏', '😂', '😲', '🎉', '❤️', '🍀'].map(emoji => (
+                      <button 
+                        key={emoji}
+                        onClick={() => sendReaction(emoji)}
+                        style={{
+                          background: 'none', 
+                          border: 'none', 
+                          fontSize: '1.4rem', 
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
+                        onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                        title={`Enviar ${emoji} al streaming`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
