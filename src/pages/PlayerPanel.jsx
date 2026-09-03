@@ -5,6 +5,7 @@ import { db, loginAnonymously } from '../firebase';
 import { generateCard75, generateCard90, validateBingo75, validateBingo90 } from '../utils/bingo';
 import BingoCard75 from '../components/BingoCard75';
 import BingoCard90 from '../components/BingoCard90';
+import ChatBox from '../components/Chat/ChatBox';
 import { Trophy, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
@@ -450,6 +451,17 @@ const PlayerPanel = () => {
           </button>
         </div>
       </div>
+
+      {/* Chat Familiar en tiempo real */}
+      <ChatBox
+        gameId={gameId}
+        currentUser={{
+          name: name,
+          avatar: playerData?.avatar || avatar,
+          isCustomAvatar: playerData?.isCustomAvatar,
+          isHost: false
+        }}
+      />
 
       <style>{`
         @keyframes floatUp {

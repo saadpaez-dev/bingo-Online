@@ -35,7 +35,12 @@ const Home = () => {
       navigate(`/host/${gameId}`);
     } catch (error) {
       console.error("Error creating game", error);
-      alert("Hubo un error al crear la partida. Revisa la consola.");
+      let msg = error?.message || "Error desconocido";
+      if (msg.includes("permission") || msg.includes("permissions") || error?.code === "permission-denied") {
+        alert("⚠️ Error de Permisos en la Base de Datos:\nLas reglas de prueba de Firebase Firestore expiraron. Debes ingresar a console.firebase.google.com -> Firestore Database -> pestaña Reglas y actualizarlas.");
+      } else {
+        alert(`Hubo un error al crear la partida:\n${msg}`);
+      }
     } finally {
       setLoading(false);
     }

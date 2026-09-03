@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { Share2, Play, Square, Dices, Users, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
+import ChatBox from '../components/Chat/ChatBox';
 
 
 const HostPanel = () => {
@@ -366,6 +367,16 @@ const HostPanel = () => {
         </div>
 
       </div>
+
+      {/* Chat Familiar para el Anfitrión */}
+      <ChatBox
+        gameId={gameId}
+        currentUser={{
+          name: 'Anfitrión',
+          avatar: '👑',
+          isHost: true
+        }}
+      />
     </div>
   );
 };
