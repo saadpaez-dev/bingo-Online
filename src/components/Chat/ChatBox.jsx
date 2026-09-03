@@ -1,22 +1,61 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, ChevronUp, ChevronDown, Zap } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
-const QUICK_PHRASES = [
-  '¡Buena suerte a todos! 🍀',
-  '¡Me falta solo una! 😱',
-  '¡Casi canto Bingo! 🎯',
-  '¡Felicidades al ganador! 👏',
-  '¡Vamos con todo! 🔥'
-];
+const QUICK_CATEGORIES = {
+  'Todos': [
+    '¡Me falta solo una! 😱',
+    '¡Casi canto Bingo! 🎯',
+    '¡BIIINGO! 🎉',
+    '¡A dos números! 🤞',
+    '¡Buena suerte a todos! 🍀',
+    '¡Vamos con todo! 🔥',
+    '¡Ese número era el mío! 🥳',
+    '¡No sale mi número! 🙈',
+    '¡Felicidades al ganador! 👏',
+    '¡Que gane el mejor! 🎩',
+    '¡Otra partida, por favor! 🔄',
+    '¡Qué nervios! 😬',
+    '¡Atentos a la bola! 🎱',
+    '¡Hoy estoy con suerte! ✨',
+    '¡Tengo el cartón casi lleno! 📋',
+    '¡Ese número no lo tengo! 😅'
+  ],
+  'Partida 🎯': [
+    '¡Me falta solo una! 😱',
+    '¡Casi canto Bingo! 🎯',
+    '¡BIIINGO! 🎉',
+    '¡A dos números! 🤞',
+    '¡Tengo el cartón casi lleno! 📋',
+    '¡Ese número era el mío! 🥳',
+    '¡No sale mi número! 🙈',
+    '¡Atentos a la bola! 🎱'
+  ],
+  'Ánimo 🔥': [
+    '¡Buena suerte a todos! 🍀',
+    '¡Vamos con todo! 🔥',
+    '¡Felicidades al ganador! 👏',
+    '¡Que gane el mejor! 🎩',
+    '¡Hoy estoy con suerte! ✨',
+    '¡Otra partida, por favor! 🔄'
+  ],
+  'Risas 😂': [
+    '¡Qué nervios! 😬',
+    '¡Ese número no lo tengo! 😅',
+    '¡No sale mi número! 🙈',
+    '¡Ese número era el mío! 🥳'
+  ]
+};
 
 const ChatBox = ({ gameId, currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [isPhrasesExpanded, setIsPhrasesExpanded] = useState(false);
   const messagesEndRef = useRef(null);
   const { playSound } = useSettings();
   const initialLoadDone = useRef(false);
@@ -95,6 +134,13 @@ const ChatBox = ({ gameId, currentUser }) => {
     }
   };
 
+  const currentPhrases = QUICK_CATEGORIES[selectedCategory] || QUICK_CATEGORIES['Todos'];
+
+  // Dividir frases en 2 filas para el modo compacto
+  const half = Math.ceil(currentPhrases.length / 2);
+  const row1 = currentPhrases.slice(0, half);
+  const row2 = currentPhrases.slice(half);
+
   return (
     <>
       {/* Botón flotante estilo sello de cera / latón */}
@@ -161,14 +207,14 @@ const ChatBox = ({ gameId, currentUser }) => {
             position: 'fixed',
             bottom: '20px',
             right: '20px',
-            width: 'min(380px, calc(100vw - 32px))',
-            height: 'min(540px, calc(100vh - 100px))',
+            width: 'min(400px, calc(100vw - 28px))',
+            height: 'min(580px, calc(100vh - 80px))',
             padding: 0,
             zIndex: 1000,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            borderRadius: '12px',
+            borderRadius: '14px',
             background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 100%)',
             border: '3.5px solid var(--burgundy-primary)',
             boxShadow: '0 25px 50px rgba(0, 0, 0, 0.75)'
@@ -177,19 +223,20 @@ const ChatBox = ({ gameId, currentUser }) => {
           {/* Header de Cuero / Burdeos */}
           <div
             style={{
-              padding: '0.9rem 1.2rem',
+              padding: '0.85rem 1.2rem',
               background: 'linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 100%)',
               color: 'var(--text-gold-emboss)',
               borderBottom: '2px solid var(--gold-brass)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              flexShrink: 0
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <MessageCircle size={22} color="var(--gold-highlight)" />
               <div>
-                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', margin: 0, fontWeight: '800' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', margin: 0, fontWeight: '800' }}>
                   Chat de la Mesa
                 </h3>
                 <span style={{ fontSize: '0.75rem', opacity: 0.85, fontFamily: 'var(--font-mono)' }}>Sala {gameId}</span>
@@ -231,7 +278,9 @@ const ChatBox = ({ gameId, currentUser }) => {
               <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--text-vintage-muted)' }}>
                 <Sparkles size={32} style={{ margin: '0 auto 0.5rem', color: 'var(--gold-brass)' }} />
                 <p style={{ fontFamily: 'var(--font-serif)', fontWeight: '700' }}>Mesa de conversación vacía</p>
-                <p style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>Envía un saludo a los demás socios 👋</p>
+                <p style={{ fontSize: '0.82rem', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                  Toca una frase abajo para saludar a tu familia 👋
+                </p>
               </div>
             ) : (
               messages.map((msg) => {
@@ -253,10 +302,10 @@ const ChatBox = ({ gameId, currentUser }) => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.35rem',
-                          fontSize: '0.75rem',
+                          fontSize: '0.78rem',
                           fontFamily: 'var(--font-serif)',
                           color: 'var(--text-vintage-muted)',
-                          marginBottom: '2px',
+                          marginBottom: '3px',
                           paddingLeft: '4px'
                         }}
                       >
@@ -285,12 +334,12 @@ const ChatBox = ({ gameId, currentUser }) => {
                         borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                         background: isMe 
                           ? 'linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 100%)' 
-                          : 'linear-gradient(180deg, #FFFFFF 0%, #F5EADA 100%)',
+                          : 'linear-gradient(180deg, #FFFFFF 0%, #F8EFE2 100%)',
                         color: isMe ? 'var(--text-gold-emboss)' : 'var(--text-vintage-dark)',
                         border: isMe ? '1.5px solid var(--gold-primary)' : '1.5px solid #C4B18F',
                         boxShadow: '0 3px 6px rgba(0,0,0,0.18)',
                         wordBreak: 'break-word',
-                        fontSize: '0.92rem',
+                        fontSize: '0.94rem',
                         lineHeight: 1.35
                       }}
                     >
@@ -315,63 +364,200 @@ const ChatBox = ({ gameId, currentUser }) => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Frases Rápidas estilo fichas */}
+          {/* =========================================================
+             PANEL FIJADO DE FRASES RÁPIDAS (AMPLIADO Y BIEN VISIBLE)
+             ========================================================= */}
           <div
             style={{
-              padding: '0.4rem 0.75rem',
+              backgroundColor: '#E8D5B7',
+              borderTop: '2px solid var(--gold-brass)',
+              borderBottom: '1.5px solid var(--gold-brass)',
+              padding: '0.45rem 0.75rem',
               display: 'flex',
+              flexDirection: 'column',
               gap: '0.35rem',
-              overflowX: 'auto',
-              backgroundColor: '#EAD7BA',
-              borderTop: '1px solid var(--gold-brass)',
-              scrollbarWidth: 'none'
+              flexShrink: 0
             }}
           >
-            {QUICK_PHRASES.map((phrase, idx) => (
+            {/* Barra superior de categorías y botón de expandir */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Zap size={14} color="#5C1D24" />
+                <span style={{ 
+                  fontFamily: 'var(--font-serif)', 
+                  fontSize: '0.78rem', 
+                  fontWeight: '800', 
+                  color: '#4A121A' 
+                }}>
+                  Frases Rápidas
+                </span>
+              </div>
+
+              {/* Categorías de filtro */}
+              <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
+                {Object.keys(QUICK_CATEGORIES).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    style={{
+                      fontSize: '0.7rem',
+                      fontFamily: 'var(--font-serif)',
+                      fontWeight: selectedCategory === cat ? '800' : '600',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '999px',
+                      border: selectedCategory === cat ? '1.5px solid var(--gold-primary)' : '1px solid #C4B18F',
+                      backgroundColor: selectedCategory === cat ? 'var(--burgundy-primary)' : '#FAF4E5',
+                      color: selectedCategory === cat ? 'var(--text-gold-emboss)' : '#3F1015',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Botón para expandir todas o ver 2 filas */}
               <button
-                key={idx}
-                onClick={() => sendMessage(phrase)}
+                onClick={() => setIsPhrasesExpanded(prev => !prev)}
                 style={{
-                  whiteSpace: 'nowrap',
-                  fontSize: '0.75rem',
-                  fontFamily: 'var(--font-serif)',
-                  padding: '0.25rem 0.6rem',
-                  borderRadius: '999px',
-                  backgroundColor: '#FAF4E5',
-                  color: 'var(--text-vintage-dark)',
+                  background: '#FAF4E5',
                   border: '1px solid var(--gold-brass)',
+                  borderRadius: '4px',
+                  padding: '2px 4px',
                   cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#4A121A'
+                }}
+                title={isPhrasesExpanded ? 'Ver compacto' : 'Ver todas las frases'}
+              >
+                {isPhrasesExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+              </button>
+            </div>
+
+            {/* Vista Expandida (Grid completo) o Compacta (2 filas bien visibles) */}
+            {isPhrasesExpanded ? (
+              <div
+                style={{
+                  maxHeight: '140px',
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                  gap: '0.35rem',
+                  padding: '0.35rem 0'
                 }}
               >
-                {phrase}
-              </button>
-            ))}
+                {currentPhrases.map((phrase, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => sendMessage(phrase)}
+                    style={{
+                      fontSize: '0.78rem',
+                      fontFamily: 'var(--font-serif)',
+                      fontWeight: '700',
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '8px',
+                      backgroundColor: '#FAF4E5',
+                      color: '#2C1A0E',
+                      border: '1.5px solid var(--gold-brass)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.12)',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.backgroundColor = '#FFFDF8'}
+                    onMouseOut={e => e.currentTarget.style.backgroundColor = '#FAF4E5'}
+                  >
+                    {phrase}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {/* Fila 1 */}
+                <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+                  {row1.map((phrase, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => sendMessage(phrase)}
+                      style={{
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.78rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '700',
+                        padding: '0.32rem 0.75rem',
+                        borderRadius: '999px',
+                        backgroundColor: '#FAF4E5',
+                        color: '#2C1A0E',
+                        border: '1.5px solid var(--gold-brass)',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                        flexShrink: 0
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.03)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Fila 2 */}
+                <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
+                  {row2.map((phrase, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => sendMessage(phrase)}
+                      style={{
+                        whiteSpace: 'nowrap',
+                        fontSize: '0.78rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '700',
+                        padding: '0.32rem 0.75rem',
+                        borderRadius: '999px',
+                        backgroundColor: '#FAF4E5',
+                        color: '#2C1A0E',
+                        border: '1.5px solid var(--gold-brass)',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                        flexShrink: 0
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.03)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Formulario de Entrada */}
           <form
             onSubmit={handleSubmit}
             style={{
-              padding: '0.65rem 0.75rem',
+              padding: '0.65rem 0.85rem',
               backgroundColor: '#FAF4E5',
               display: 'flex',
               gap: '0.5rem',
               alignItems: 'center',
-              borderTop: '1.5px solid var(--gold-brass)'
+              flexShrink: 0
             }}
           >
             <input
               type="text"
               style={{
-                padding: '0.6rem 0.9rem',
-                fontSize: '0.9rem',
+                padding: '0.65rem 1rem',
+                fontSize: '0.92rem',
                 borderRadius: '999px',
                 flex: 1,
                 border: '1.5px solid var(--gold-brass)',
                 background: '#FFFDF9',
                 color: 'var(--text-vintage-dark)',
-                outline: 'none'
+                outline: 'none',
+                fontFamily: 'var(--font-sans)'
               }}
               placeholder="Escribe un mensaje..."
               value={inputMessage}
@@ -382,8 +568,8 @@ const ChatBox = ({ gameId, currentUser }) => {
               type="submit"
               disabled={!inputMessage.trim()}
               style={{
-                width: '38px',
-                height: '38px',
+                width: '40px',
+                height: '40px',
                 padding: 0,
                 borderRadius: '50%',
                 display: 'flex',
@@ -393,11 +579,12 @@ const ChatBox = ({ gameId, currentUser }) => {
                 background: 'linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 100%)',
                 color: 'var(--text-gold-emboss)',
                 border: '1.5px solid var(--gold-primary)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
                 cursor: 'pointer'
               }}
               title="Enviar"
             >
-              <Send size={16} />
+              <Send size={17} />
             </button>
           </form>
         </div>
