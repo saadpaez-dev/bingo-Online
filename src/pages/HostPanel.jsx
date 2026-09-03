@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Share2, Play, Square, Dices, Users, Settings } from 'lucide-react';
+import { Share2, Play, Square, Dices, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
-
 
 const HostPanel = () => {
   const { gameId } = useParams();
@@ -16,7 +15,6 @@ const HostPanel = () => {
   const [activeReactions, setActiveReactions] = useState([]);
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const { playSound } = useSettings();
-
 
   const gameStateRef = useRef(null);
   useEffect(() => {
@@ -33,7 +31,6 @@ const HostPanel = () => {
           triggerWinAnimation();
         }
 
-        // Manejar reacciones entrantes
         if (data.latestReaction && data.latestReaction.timestamp > Date.now() - 3000) {
           const id = Date.now() + Math.random();
           setActiveReactions(prev => [...prev, { id, emoji: data.latestReaction.emoji }]);
@@ -66,8 +63,8 @@ const HostPanel = () => {
     const duration = 5 * 1000;
     const end = Date.now() + duration;
     const frame = () => {
-      confetti({ particleCount: 10, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#4F46E5', '#FACC15', '#22C55E'] });
-      confetti({ particleCount: 10, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#4F46E5', '#FACC15', '#22C55E'] });
+      confetti({ particleCount: 10, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
+      confetti({ particleCount: 10, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
       if (Date.now() < end) requestAnimationFrame(frame);
     };
     frame();
@@ -149,13 +146,12 @@ const HostPanel = () => {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  if (!gameState) return <div className="text-center mt-4">Cargando sala...</div>;
+  if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
 
   const maxNumber = gameState.mode === 75 ? 75 : 90;
   const called = gameState.calledNumbers || [];
   const currentNumber = called.length > 0 ? called[called.length - 1] : null;
 
-  // Letra para 75 bolas
   let currentLetter = '';
   if (gameState.mode === 75 && currentNumber) {
     if (currentNumber <= 15) currentLetter = 'B';
@@ -166,9 +162,9 @@ const HostPanel = () => {
   }
 
   return (
-    <div className="app-container" style={{ maxWidth: '1000px', position: 'relative' }}>
+    <div className="app-container" style={{ maxWidth: '1080px', position: 'relative' }}>
       
-      {/* Contenedor de reacciones flotantes para el anfitrión */}
+      {/* Reacciones flotantes */}
       <div style={{ position: 'fixed', bottom: '10px', left: '20px', pointerEvents: 'none', zIndex: 100 }}>
         {activeReactions.map(r => (
           <div key={r.id} style={{
@@ -184,119 +180,168 @@ const HostPanel = () => {
         ))}
       </div>
 
-      <style>{`
-        @keyframes floatUp {
-          0% { transform: translateY(0) scale(1); opacity: 1; }
-          100% { transform: translateY(-300px) scale(1.5); opacity: 0; }
-        }
-      `}</style>
-
       {/* HEADER DEL ANFITRIÓN */}
-      <div className="card flex justify-between items-center animate-pop" style={{ padding: '1.5rem 2rem' }}>
+      <div className="card flex justify-between items-center animate-pop" style={{ 
+        padding: '1.25rem 2rem',
+        border: '3px solid var(--burgundy-primary)'
+      }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-main)' }}>Panel de Anfitrión</h2>
-          <div style={{ color: 'var(--text-muted)' }}>Administra la partida</div>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
+            Mesa del Anfitrión
+          </h2>
+          <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)' }}>
+            Club Clásico de Bingo
+          </div>
         </div>
         
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Código de Sala</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '4px', lineHeight: 1 }}>{gameId}</div>
+          <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-serif)', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Código de Sala
+          </div>
+          <div style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: '900', 
+            fontFamily: 'var(--font-mono)', 
+            color: 'var(--burgundy-primary)', 
+            letterSpacing: '5px', 
+            lineHeight: 1 
+          }}>
+            {gameId}
+          </div>
         </div>
 
         <div className="flex gap-4 items-center">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-app)', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-full)' }}>
-            <Users size={20} color="var(--secondary)" />
-            <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{players.length}</span>
+          <div className="vintage-brass-plaque" style={{ padding: '0.5rem 1rem', fontSize: '1.1rem', margin: 0 }}>
+            <Users size={18} />
+            <span>{players.length} Socios</span>
           </div>
-          <button className="btn btn-secondary" onClick={shareWhatsApp} style={{ borderRadius: 'var(--radius-full)', padding: '0.75rem' }}>
-            <Share2 size={20} />
+          <button className="btn btn-secondary" onClick={shareWhatsApp} style={{ borderRadius: '50%', padding: '0.65rem' }} title="Compartir">
+            <Share2 size={18} />
           </button>
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL TV MODE */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      {/* ÁREA PRINCIPAL MODO SALA / TV */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
         
-        {/* IZQUIERDA: ESTADO Y SORTEO */}
-        <div className="card animate-pop flex flex-col items-center justify-center" style={{ minHeight: '400px', animationDelay: '0.1s' }}>
+        {/* PANEL IZQUIERDO: SORTEO Y BOLA ACTIVA */}
+        <div className="card animate-pop flex flex-col items-center justify-center" style={{ 
+          minHeight: '440px', 
+          border: '3px solid var(--burgundy-primary)'
+        }}>
           
           {gameState.status === 'waiting' && (
             <div className="text-center">
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👋</div>
-              <h2 style={{ marginBottom: '0.5rem' }}>Sala Lista</h2>
-              <p className="text-muted mb-4">Esperando a que los jugadores se unan...</p>
-              <button className="btn btn-primary" onClick={startGame} disabled={players.length === 0} style={{ padding: '1rem 2rem', fontSize: '1.2rem' }}>
-                <Play size={24} /> Iniciar ({gameState.mode} Bolas)
+              <div style={{ fontSize: '4rem', marginBottom: '0.75rem' }}>🎟️</div>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '0.5rem' }}>Mesa Lista</h2>
+              <p className="vintage-subtitle" style={{ marginBottom: '1.5rem' }}>Esperando a los participantes familiares...</p>
+              <button 
+                className="btn-vintage-burgundy" 
+                onClick={startGame} 
+                disabled={players.length === 0}
+              >
+                <Play size={22} /> Iniciar Partida ({gameState.mode} Bolas)
               </button>
             </div>
           )}
 
           {gameState.status === 'playing' && (
             <div className="text-center" style={{ width: '100%' }}>
-              <h3 className="text-muted mb-2" style={{ textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.9rem' }}>Última Bola</h3>
+              <h3 style={{
+                fontFamily: 'var(--font-serif)',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                fontSize: '0.95rem',
+                color: 'var(--text-vintage-muted)',
+                marginBottom: '1rem',
+                fontWeight: '800'
+              }}>
+                Última Bola Extraída
+              </h3>
               
               {currentNumber ? (
                 <div className="animate-pop" style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '200px',
-                  height: '200px',
+                  width: '185px',
+                  height: '185px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                  color: 'white',
-                  boxShadow: '0 10px 30px rgba(79, 70, 229, 0.4)',
-                  border: '10px solid white',
-                  marginBottom: '2rem'
+                  background: 'radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%)',
+                  color: 'var(--text-gold-emboss)',
+                  boxShadow: '0 16px 35px rgba(0, 0, 0, 0.75), inset 0 4px 8px rgba(255, 255, 255, 0.4), inset 0 -8px 18px rgba(0, 0, 0, 0.9)',
+                  border: '5px solid var(--gold-primary)',
+                  marginBottom: '1.5rem',
+                  position: 'relative'
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
-                    {currentLetter && <span style={{ fontSize: '2rem', fontWeight: 'bold', opacity: 0.9 }}>{currentLetter}</span>}
-                    <span style={{ fontSize: '7rem', fontWeight: '800' }}>{currentNumber}</span>
+                    {currentLetter && (
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: '2.1rem', fontWeight: '900', color: 'var(--gold-highlight)', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                        {currentLetter}
+                      </span>
+                    )}
+                    <span style={{ 
+                      fontFamily: 'var(--font-serif)', 
+                      fontSize: '5.8rem', 
+                      fontWeight: '900', 
+                      textShadow: '0 3px 6px rgba(0,0,0,0.95)' 
+                    }}>
+                      {currentNumber}
+                    </span>
                   </div>
                 </div>
               ) : (
-                <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem' }}>
-                  <p style={{ fontSize: '1.5rem' }}>¡Listo para comenzar el sorteo!</p>
+                <div style={{ height: '185px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontStyle: 'italic', color: 'var(--text-vintage-muted)' }}>
+                    ¡Listo para comenzar el sorteo de bolas!
+                  </p>
                 </div>
               )}
 
-              {/* Controles de Sorteo */}
-              <div className="flex flex-col gap-4" style={{ backgroundColor: 'var(--bg-app)', padding: '1.5rem', borderRadius: '1rem' }}>
+              {/* Controles del bolillero */}
+              <div style={{ 
+                background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                border: '1.5px solid var(--gold-brass)'
+              }}>
                 <button
-                  className="btn"
+                  className="btn-vintage-burgundy"
                   onClick={drawNumber}
                   disabled={autoDrawInterval !== null}
-                  style={{ 
-                    padding: '1rem', 
-                    fontSize: '1.2rem', 
-                    width: '100%',
-                    background: 'linear-gradient(135deg, #10B981, #059669)',
-                    color: 'white'
-                  }}
+                  style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.2rem' }}
                 >
-                  <Dices size={24} /> Sacar Número Manual
+                  <Dices size={22} /> Extraer Número Manual
                 </button>
 
                 <div className="flex items-center gap-2">
                   <select
-                    className="input"
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-md)' }}
+                    className="vintage-slot-input"
+                    style={{ 
+                      flex: 1, 
+                      padding: '0.6rem', 
+                      fontSize: '0.95rem',
+                      background: '#fff',
+                      border: '1.5px solid var(--gold-brass)',
+                      borderRadius: '8px' 
+                    }}
                     value={intervalTime}
                     onChange={(e) => setIntervalTime(Number(e.target.value))}
                     disabled={autoDrawInterval !== null}
                   >
-                    <option value={3}>3 seg</option>
-                    <option value={5}>5 seg</option>
-                    <option value={8}>8 seg</option>
+                    <option value={3}>Cada 3 seg</option>
+                    <option value={5}>Cada 5 seg</option>
+                    <option value={8}>Cada 8 seg</option>
+                    <option value={10}>Cada 10 seg</option>
                   </select>
                   
                   <button
-                    className={`btn ${autoDrawInterval ? 'btn-secondary' : 'btn-primary'}`}
+                    className={`btn ${autoDrawInterval ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={toggleAutoDraw}
-                    style={{ flex: 2, padding: '0.75rem', borderRadius: 'var(--radius-md)' }}
+                    style={{ flex: 1.4, padding: '0.65rem 1rem', fontSize: '0.95rem' }}
                   >
-                    {autoDrawInterval ? <Square size={20} color="var(--danger)" /> : <Play size={20} />}
-                    {autoDrawInterval ? 'Detener' : 'Auto'}
+                    {autoDrawInterval ? <Square size={16} /> : <Play size={16} />}
+                    {autoDrawInterval ? 'Pausar' : 'Sorteo Automático'}
                   </button>
                 </div>
               </div>
@@ -305,37 +350,52 @@ const HostPanel = () => {
 
           {gameState.status === 'finished' && (
             <div className="text-center">
-              <h2 style={{ fontSize: '2.5rem', color: 'var(--success)', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.5rem', color: 'var(--burgundy-primary)', marginBottom: '1rem', fontWeight: '900' }}>
                 ¡Tenemos Ganador!
               </h2>
               {gameState.winners && gameState.winners.length > 0 ? (
-                <div style={{ marginBottom: '2rem' }}>
-                  <p style={{ fontSize: '2rem', fontWeight: 'bold' }}>🏆 {gameState.winners.join(', ')}</p>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: '2.2rem', fontWeight: 'bold' }}>
+                    🏆 {gameState.winners.join(', ')}
+                  </p>
                 </div>
               ) : (
-                <p className="mb-4">Partida terminada sin ganadores.</p>
+                <p className="vintage-subtitle" style={{ marginBottom: '1rem' }}>Partida concluida sin reclamaciones.</p>
               )}
-              <button className="btn btn-primary" onClick={resetGame} style={{ padding: '1rem 2rem', fontSize: '1.2rem' }}>
-                Jugar de Nuevo
+              <button className="btn-vintage-burgundy" onClick={resetGame} style={{ maxWidth: '280px' }}>
+                Nueva Partida
               </button>
             </div>
           )}
 
         </div>
 
-        {/* DERECHA: TABLERO GENERAL */}
-        <div className="card animate-pop" style={{ animationDelay: '0.2s', display: 'flex', flexDirection: 'column' }}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 style={{ fontSize: '1.2rem' }}>Tablero General</h3>
-            <span className="text-muted" style={{ fontSize: '0.9rem' }}>Faltan {maxNumber - called.length}</span>
+        {/* PANEL DERECHO: TABLERO GENERAL MAESTRO DE CAOBA */}
+        <div className="card animate-pop" style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          border: '3px solid var(--burgundy-primary)'
+        }}>
+          <div className="flex justify-between items-center mb-3">
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.3rem', fontWeight: '800' }}>
+              Tablero Maestro
+            </h3>
+            <span className="vintage-brass-plaque" style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', margin: 0 }}>
+              Faltan {maxNumber - called.length} bolas
+            </span>
           </div>
           
           <div style={{
             display: 'grid',
             gridTemplateColumns: gameState.mode === 75 ? 'repeat(5, 1fr)' : 'repeat(10, 1fr)',
-            gap: '0.25rem',
+            gap: '0.3rem',
             flex: 1,
-            alignContent: 'start'
+            alignContent: 'start',
+            padding: '0.5rem',
+            background: 'radial-gradient(circle at center, #3A1C11 0%, #200D07 100%)',
+            borderRadius: '10px',
+            border: '2px solid var(--gold-antique)',
+            boxShadow: 'inset 0 0 15px rgba(0,0,0,0.8)'
           }}>
             {Array.from({ length: maxNumber }, (_, i) => i + 1).map(num => {
               const isCalled = called.includes(num);
@@ -347,17 +407,30 @@ const HostPanel = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: gameState.mode === 75 ? '1.2rem' : '0.9rem',
-                  fontWeight: 'bold',
-                  borderRadius: '0.25rem',
-                  backgroundColor: isLast ? 'var(--primary)' : isCalled ? 'var(--success)' : 'var(--bg-app)',
-                  color: isCalled ? 'white' : 'var(--text-muted)',
-                  border: `1px solid ${isCalled ? 'transparent' : 'var(--border-color)'}`,
-                  opacity: isCalled ? 1 : 0.5,
-                  transition: 'all 0.3s ease',
-                  transform: isLast ? 'scale(1.1)' : 'scale(1)',
+                  fontSize: gameState.mode === 75 ? '1.15rem' : '0.82rem',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: '800',
+                  borderRadius: '6px',
+                  background: isLast 
+                    ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
+                    : isCalled 
+                    ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
+                    : 'rgba(255, 255, 255, 0.06)',
+                  color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.4)',
+                  border: isLast 
+                    ? '2px solid var(--gold-primary)' 
+                    : isCalled 
+                    ? '1.5px solid #81C784' 
+                    : '1px solid rgba(140, 107, 35, 0.2)',
+                  opacity: isCalled ? 1 : 0.65,
+                  transform: isLast ? 'scale(1.15)' : 'scale(1)',
                   zIndex: isLast ? 10 : 1,
-                  boxShadow: isLast ? '0 4px 10px rgba(79, 70, 229, 0.5)' : 'none'
+                  boxShadow: isLast 
+                    ? '0 0 14px rgba(212, 175, 55, 0.9)' 
+                    : isCalled 
+                    ? '0 2px 4px rgba(0,0,0,0.4)' 
+                    : 'none',
+                  textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
                 }}>
                   {num}
                 </div>

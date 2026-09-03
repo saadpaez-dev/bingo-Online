@@ -1,59 +1,75 @@
+/* =========================================================
+   BINGO FAMILIAR - ESTILO CLUB SALOON VINTAGE & CAOBA
+   Inspirado en clubes clásicos, pergamino envejecido,
+   detalles en latón/oro y madera noble.
+   ========================================================= */
+
 :root {
-  /* Core Colors */
-  --primary: #4F46E5; /* Indigo */
-  --primary-hover: #4338ca;
-  --secondary: #7C3AED; /* Violet */
-  --secondary-hover: #6d28d9;
-  
-  --success: #22C55E;
-  --success-hover: #16a34a;
-  --warning: #FACC15;
-  --danger: #EF4444;
-  
-  /* Theme Colors (Light Default) */
-  --bg-app: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F1F5F9;
-  
-  --text-main: #1E293B;
-  --text-muted: #64748B;
-  
-  --border-color: #E2E8F0;
-  
-  /* Layout */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
-  
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  
-  /* Fonts */
-  --font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  
-  /* Background Pattern */
-  --bg-pattern: radial-gradient(#CBD5E1 1px, transparent 1px);
-  --bg-pattern-size: 24px 24px;
+  /* Paleta Vintage Principal */
+  --saloon-wood-deep: #160a06;
+  --saloon-wood-mid: #2e150c;
+  --saloon-wood-warm: #4a2415;
+  --saloon-lamp-glow: #e89547;
+
+  /* Pergamino y Papel Envejecido */
+  --parchment-light: #FAF4E5;
+  --parchment-base: #F4E7CB;
+  --parchment-dark: #E6D2AE;
+  --parchment-shadow: rgba(80, 52, 28, 0.25);
+
+  /* Metales Nobles y Oro */
+  --gold-highlight: #FFF1C5;
+  --gold-primary: #D4AF37;
+  --gold-brass: #C59B27;
+  --gold-antique: #8C6B23;
+  --gold-dark: #573E11;
+
+  /* Burdeos Imperial / Vino Tinto */
+  --burgundy-light: #7E252D;
+  --burgundy-primary: #5C1D24;
+  --burgundy-dark: #3F1015;
+  --burgundy-shadow: rgba(63, 16, 21, 0.6);
+
+  /* Madera Tallada */
+  --wood-grain-light: #bf8050;
+  --wood-grain-mid: #8c4c23;
+  --wood-grain-dark: #5a2c10;
+  --wood-grain-deep: #2e1307;
+
+  /* Textos */
+  --text-vintage-dark: #2C1A0E;
+  --text-vintage-muted: #6B533E;
+  --text-gold-emboss: #FDF3D0;
+
+  /* Tipografías */
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-script: 'Great Vibes', cursive;
+  --font-display: 'Cinzel', serif;
+  --font-mono: 'Special Elite', 'Courier Prime', monospace;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+
+  /* Compatibilidad con clases previas */
+  --primary: var(--burgundy-primary);
+  --secondary: var(--gold-brass);
+  --success: #2E7D32;
+  --danger: #C62828;
+  --warning: #F57F17;
+  --border-color: var(--gold-antique);
+  --bg-card: var(--parchment-base);
+  --text-main: var(--text-vintage-dark);
+  --text-muted: var(--text-vintage-muted);
 }
 
 [data-theme='dark'] {
-  /* Theme Colors (Dark) */
-  --bg-app: #0F172A;
-  --bg-card: #1E293B;
-  --bg-card-hover: #334155;
-  
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  
-  --border-color: #334155;
-  
-  --bg-pattern: radial-gradient(#334155 1px, transparent 1px);
+  --saloon-wood-deep: #0d0604;
+  --saloon-wood-mid: #1d0c07;
+  --saloon-wood-warm: #33170c;
+  --parchment-light: #E8DCC2;
+  --parchment-base: #DAC7A4;
+  --parchment-dark: #C5AE84;
 }
 
-/* Reset & Base */
+/* Reset y Base */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -61,127 +77,509 @@
 }
 
 body {
-  font-family: var(--font-family);
-  background-color: var(--bg-app);
-  background-image: var(--bg-pattern);
-  background-size: var(--bg-pattern-size);
-  color: var(--text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: var(--font-sans);
+  color: var(--text-vintage-dark);
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+
+  /* Fondo ambiental de mesa de salón con lámpara cálida */
+  background-color: var(--saloon-wood-deep);
+  background-image: 
+    radial-gradient(circle at 50% 12%, rgba(232, 149, 71, 0.28) 0%, rgba(74, 36, 21, 0.45) 42%, transparent 75%),
+    radial-gradient(ellipse at 50% 50%, #3a1c11 0%, #200d07 55%, #0e0503 100%);
+  background-attachment: fixed;
+}
+
+/* Fichas de casino flotantes en el fondo para dar ambientación */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 85%, rgba(184, 134, 11, 0.12) 0%, transparent 8%),
+    radial-gradient(circle at 88% 78%, rgba(92, 29, 36, 0.15) 0%, transparent 10%),
+    radial-gradient(circle at 6% 25%, rgba(212, 175, 55, 0.08) 0%, transparent 12%),
+    radial-gradient(circle at 92% 20%, rgba(232, 149, 71, 0.09) 0%, transparent 9%);
+  z-index: 0;
 }
 
 #root {
-  max-width: 1200px;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenedor central */
+.app-container {
+  width: 100%;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1.2;
+/* =========================================================
+   TARJETA DE PERGAMINO VINTAGE (ESTILO IMAGEN)
+   ========================================================= */
+.vintage-parchment-card {
+  position: relative;
+  background: radial-gradient(ellipse at 50% 30%, var(--parchment-light) 0%, var(--parchment-base) 65%, var(--parchment-dark) 100%);
+  border-radius: 12px;
+  padding: 2.25rem 2rem;
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.75),
+    0 10px 25px rgba(0, 0, 0, 0.5),
+    inset 0 0 40px rgba(120, 80, 40, 0.22);
+  border: 4px solid var(--burgundy-primary);
+  margin: 0 auto;
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
 }
 
-/* Common Components */
-
-.card {
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: box-shadow 0.3s ease, transform 0.2s ease;
+/* Borde decorativo interior dorado */
+.vintage-parchment-card::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border: 2px solid var(--gold-brass);
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: inset 0 0 12px rgba(140, 107, 35, 0.25);
 }
 
-.card:hover {
-  box-shadow: var(--shadow-lg);
+/* Esquinas con filigrana dorada ornamental */
+.filigree-corner {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  z-index: 3;
+}
+.filigree-corner.top-left { top: 6px; left: 6px; }
+.filigree-corner.top-right { top: 6px; right: 6px; transform: scaleX(-1); }
+.filigree-corner.bottom-left { bottom: 6px; left: 6px; transform: scaleY(-1); }
+.filigree-corner.bottom-right { bottom: 6px; right: 6px; transform: scale(-1); }
+
+/* =========================================================
+   MEDALLÓN CENTRAL SUPERIOR (ESTRELLA Y ESCUDO)
+   ========================================================= */
+.vintage-medallion {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 55%, var(--burgundy-dark) 100%);
+  border: 4px solid var(--gold-primary);
+  box-shadow: 
+    0 6px 14px rgba(0, 0, 0, 0.45),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  outline: 2px dashed rgba(212, 175, 55, 0.6);
+  outline-offset: 4px;
 }
 
-/* Buttons */
-.btn {
-  display: inline-flex;
+.vintage-medallion-star {
+  color: var(--gold-highlight);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  animation: starPulse 3s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255, 241, 197, 0.4)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255, 241, 197, 0.9)); }
+}
+
+/* =========================================================
+   TÍTULOS VINTAGE
+   ========================================================= */
+.vintage-title-container {
+  margin-bottom: 1.5rem;
+}
+
+.vintage-title-bingo {
+  font-family: var(--font-serif);
+  font-size: 3.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1;
+  /* Relieve grabado clásico */
+  color: #243526; /* Verde bosque oscuro como en la imagen */
+  text-shadow: 
+    1px 1px 0px rgba(255, 255, 255, 0.8),
+    2px 2px 4px rgba(0, 0, 0, 0.35);
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+
+.vintage-title-familiar {
+  font-family: var(--font-script);
+  font-size: 3.8rem;
+  font-weight: 400;
+  color: #651a23; /* Tono vino burdeos artesanal */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateY(-4px);
+}
+
+.vintage-subtitle {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--text-vintage-muted);
+  margin-top: 0.25rem;
+  letter-spacing: 0.5px;
+}
+
+/* Encabezado de sección con icono de engranajes */
+.vintage-section-header {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-full);
-  font-family: var(--font-family);
-  font-weight: 600;
-  font-size: 1rem;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-vintage-dark);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.5px;
+}
+
+.vintage-section-icon {
+  color: var(--gold-antique);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+/* =========================================================
+   BOLAS 3D DE MADERA TALLADA (75 & 90)
+   ========================================================= */
+.vintage-balls-selector {
+  display: flex;
+  justify-content: center;
+  gap: 2.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.vintage-ball-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
   user-select: none;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.btn:active {
-  transform: scale(0.95);
+.vintage-ball-wrapper:hover {
+  transform: translateY(-4px);
 }
 
-.btn:disabled {
-  opacity: 0.5;
+.vintage-wood-sphere {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  position: relative;
+  /* Esfera 3D con vetas de madera concéntricas */
+  background: 
+    radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%);
+  box-shadow: 
+    0 12px 20px rgba(0, 0, 0, 0.5),
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 3px 6px rgba(255, 255, 255, 0.35),
+    inset 0 -5px 12px rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(140, 76, 35, 0.6);
+  transition: all 0.3s ease;
+}
+
+/* Anillo concéntrico tallado en la esfera */
+.vintage-wood-sphere::before {
+  content: '';
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1px dashed rgba(60, 25, 10, 0.5);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.vintage-wood-number {
+  font-family: var(--font-serif);
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #2b1408;
+  text-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.2),
+    0 -1px 2px rgba(0, 0, 0, 0.85); /* Efecto número grabado en bajo relieve */
+  z-index: 2;
+}
+
+/* Estado seleccionado con resplandor dorado */
+.vintage-ball-wrapper.active .vintage-wood-sphere {
+  border-color: var(--gold-primary);
+  box-shadow: 
+    0 0 25px rgba(212, 175, 55, 0.75),
+    0 12px 20px rgba(0, 0, 0, 0.6),
+    inset 0 0 14px rgba(255, 241, 197, 0.5);
+  transform: scale(1.06);
+}
+
+/* Plaquita de bronce atornillada debajo de la bola */
+.vintage-brass-plaque {
+  margin-top: 0.65rem;
+  background: linear-gradient(180deg, #d6af66 0%, #b88b39 50%, #8f651e 100%);
+  border: 1.5px solid #5d3f11;
+  border-radius: 14px;
+  padding: 0.35rem 1rem;
+  position: relative;
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2b1704;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 3px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Tornillos / remaches en los extremos de la placa */
+.vintage-brass-plaque::before,
+.vintage-brass-plaque::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3b2308;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* =========================================================
+   BOTÓN 3D BURDEOS IMPERIAL (CREAR SALA AHORA)
+   ========================================================= */
+.btn-vintage-burgundy {
+  width: 100%;
+  max-width: 380px;
+  padding: 1.05rem 2rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 50%, var(--burgundy-dark) 100%);
+  border: 3.5px solid var(--gold-primary);
+  color: var(--text-gold-emboss);
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    inset 0 2px 3px rgba(255, 255, 255, 0.35),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
+  transition: all 0.2s ease;
+  margin: 0 auto;
+}
+
+.btn-vintage-burgundy:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 24px rgba(0, 0, 0, 0.65),
+    0 0 20px rgba(212, 175, 55, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  border-color: var(--gold-highlight);
+}
+
+.btn-vintage-burgundy:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.6),
+    inset 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.btn-vintage-burgundy:disabled {
+  opacity: 0.65;
   cursor: not-allowed;
-  transform: none;
+}
+
+/* =========================================================
+   SEPARADOR DE CUENTAS DE ÁBACO
+   ========================================================= */
+.vintage-abacus-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}
+
+/* Varilla metálica central */
+.vintage-abacus-divider::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #b38838 20%, #b38838 80%, transparent 100%);
+  z-index: 1;
+}
+
+.vintage-abacus-beads {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+.abacus-bead {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #a66a38 0%, #6e3914 70%, #421c05 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.abacus-bead.small { width: 8px; height: 8px; }
+.abacus-bead.medium { width: 12px; height: 12px; }
+.abacus-bead.large { 
+  width: 18px; 
+  height: 18px; 
+  border: 1px solid var(--gold-brass);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================================
+   RANURA MECÁNICA DE LATÓN PARA ENTRADA DE CÓDIGO
+   ========================================================= */
+.vintage-code-slot-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.vintage-brass-slot {
+  position: relative;
+  background: linear-gradient(180deg, #c7a15a 0%, #a47d34 50%, #7d5b1d 100%);
+  border: 2px solid #50370d;
+  border-radius: 10px;
+  padding: 8px 12px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 
+    0 6px 14px rgba(0, 0, 0, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* 4 Tornillos esquineros */
+.slot-screw {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3c2409;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.slot-screw.tl { top: 4px; left: 4px; }
+.slot-screw.tr { top: 4px; right: 4px; }
+.slot-screw.bl { bottom: 4px; left: 4px; }
+.slot-screw.br { bottom: 4px; right: 4px; }
+
+/* Ventanilla interior con papel estarcido */
+.vintage-slot-window {
+  background: linear-gradient(180deg, #d3c3a4 0%, #f0e6cf 50%, #c9b999 100%);
+  border: 2px solid #3c260b;
+  border-radius: 6px;
+  box-shadow: 
+    inset 0 4px 8px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  padding: 2px;
+}
+
+.vintage-slot-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: #1a0f07;
+  padding: 0.6rem 0.5rem;
+  outline: none;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   ESTILOS GENERALES ADAPTABLES (CARTÓN, TABLERO, CHAT)
+   ========================================================= */
+.card {
+  background: radial-gradient(ellipse at center, var(--parchment-light) 0%, var(--parchment-base) 100%);
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+  border: 3px solid var(--gold-antique);
+  color: var(--text-vintage-dark);
+}
+
+.btn {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
-}
-
-.btn-primary:hover:not(:disabled) {
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.23);
-  transform: translateY(-2px);
+  background: linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 100%);
+  color: var(--text-gold-emboss);
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .btn-secondary {
-  background-color: var(--bg-card);
-  color: var(--text-main);
-  border: 2px solid var(--border-color);
+  background: linear-gradient(180deg, #d6af66 0%, #b88b39 100%);
+  color: #2b1704;
+  border: 2px solid #5d3f11;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--bg-card-hover);
-  border-color: var(--primary);
-  color: var(--primary);
+/* Animaciones */
+@keyframes popIn {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.btn-success {
-  background-color: var(--success);
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.39);
-}
-.btn-success:hover:not(:disabled) {
-  background-color: var(--success-hover);
-  transform: translateY(-2px);
+.animate-pop {
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Inputs */
-.input {
-  width: 100%;
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-full);
-  border: 2px solid var(--border-color);
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  font-family: var(--font-family);
-  font-size: 1.1rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-}
-
-/* Utilities */
+/* Clases de utilidad */
 .text-center { text-align: center; }
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -193,39 +591,3 @@ h1, h2, h3, h4, h5, h6 {
 .mt-4 { margin-top: 1rem; }
 .mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
-.text-muted { color: var(--text-muted); }
-.font-bold { font-weight: 700; }
-.text-2xl { font-size: 1.5rem; }
-.text-3xl { font-size: 1.875rem; }
-.text-4xl { font-size: 2.25rem; }
-
-/* Animations */
-@keyframes popIn {
-  0% { transform: scale(0.8); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-@keyframes starShine {
-  0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
-  50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: brightness(1.2); }
-  100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
-}
-
-.animate-pop {
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-/* Layout Utilities */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}

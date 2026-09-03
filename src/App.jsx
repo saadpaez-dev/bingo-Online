@@ -7,12 +7,11 @@ import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { Moon, Sun, Volume2, VolumeX } from 'lucide-react';
 import './App.css';
 
-// Componente para la barra superior global
+// Barra superior estilo Salón de Caoba y Bronce
 const GlobalHeader = () => {
   const { theme, toggleTheme, soundEnabled, toggleSound } = useSettings();
   const location = useLocation();
 
-  // No mostrar el título en la pantalla de inicio porque ya tiene uno gigante
   const showTitle = location.pathname !== '/';
 
   return (
@@ -20,49 +19,71 @@ const GlobalHeader = () => {
       display: 'flex',
       justifyContent: showTitle ? 'space-between' : 'flex-end',
       alignItems: 'center',
-      padding: '1rem 2rem',
-      backgroundColor: 'var(--bg-card)',
-      borderBottom: '1px solid var(--border-color)',
+      padding: '0.75rem 2rem',
+      background: 'linear-gradient(180deg, rgba(46, 21, 12, 0.95) 0%, rgba(22, 10, 6, 0.95) 100%)',
+      backdropFilter: 'blur(8px)',
+      borderBottom: '2px solid var(--gold-brass)',
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      boxShadow: 'var(--shadow-sm)'
+      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.6)'
     }}>
       {showTitle && (
-        <a href="/" style={{ textDecoration: 'none', color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span>🎉</span> Bingo Familiar
+        <a href="/" style={{ 
+          textDecoration: 'none', 
+          color: 'var(--text-gold-emboss)', 
+          fontFamily: 'var(--font-serif)',
+          fontWeight: '900', 
+          fontSize: '1.35rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          letterSpacing: '1px',
+          textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+        }}>
+          <span style={{ color: 'var(--gold-highlight)' }}>⚜️</span> Bingo Familiar
         </a>
       )}
       
-      <div style={{ display: 'flex', gap: '1rem', marginLeft: showTitle ? '0' : 'auto' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', marginLeft: showTitle ? '0' : 'auto' }}>
         <button 
           onClick={toggleSound}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: soundEnabled ? 'var(--primary)' : 'var(--text-muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '0.5rem', borderRadius: '50%',
-            backgroundColor: 'var(--bg-app)',
+            background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
+            border: '1.5px solid var(--gold-brass)', 
+            cursor: 'pointer',
+            color: soundEnabled ? 'var(--burgundy-primary)' : 'var(--text-vintage-muted)',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            padding: '0.45rem', 
+            borderRadius: '50%',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.35)',
             transition: 'all 0.2s'
           }}
           title={soundEnabled ? 'Silenciar sonidos' : 'Activar sonidos'}
         >
-          {soundEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
         
         <button 
           onClick={toggleTheme}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: theme === 'dark' ? 'var(--warning)' : 'var(--text-muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '0.5rem', borderRadius: '50%',
-            backgroundColor: 'var(--bg-app)',
+            background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
+            border: '1.5px solid var(--gold-brass)', 
+            cursor: 'pointer',
+            color: theme === 'dark' ? 'var(--gold-antique)' : 'var(--burgundy-primary)',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            padding: '0.45rem', 
+            borderRadius: '50%',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.35)',
             transition: 'all 0.2s'
           }}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          title={theme === 'dark' ? 'Cambiar a modo diurno' : 'Cambiar a modo nocturno'}
         >
-          {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
     </header>

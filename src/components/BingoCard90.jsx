@@ -1,21 +1,19 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 
-// Recibe un array plano de 15 números (sin nulls)
-// Los muestra en una cuadrícula compacta de 5 columnas x 3 filas — sin espacios en blanco
 const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
   if (!grid || grid.length !== 15) return null;
 
-  // Encabezados de columna con gradientes
   const headers = ['1-18', '19-36', '37-54', '55-72', '73-90'];
-  const colColors = [
-    'linear-gradient(135deg, #3b82f6, #2563eb)', // Blue
-    'linear-gradient(135deg, #ef4444, #dc2626)', // Red
-    'linear-gradient(135deg, #f59e0b, #d97706)', // Yellow
-    'linear-gradient(135deg, #10b981, #059669)', // Green
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)', // Purple
+  
+  // Placas de latón grabadas para columnas de 90 bolas
+  const headerStyles = [
+    'linear-gradient(180deg, #5C1D24 0%, #3F1015 100%)',
+    'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)',
+    'linear-gradient(180deg, #8C6B23 0%, #573E11 100%)',
+    'linear-gradient(180deg, #243526 0%, #152217 100%)',
+    'linear-gradient(180deg, #4A2415 0%, #2A1208 100%)',
   ];
-  const solidColors = ['#2563eb', '#dc2626', '#d97706', '#059669', '#7c3aed']; // Para los bordes y sombras
 
   // Dividir en 3 filas de 5
   const rows = [
@@ -25,44 +23,70 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
   ];
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', userSelect: 'none' }}>
-      
-      {/* Encabezados */}
+    <div style={{
+      maxWidth: '520px',
+      margin: '0 auto',
+      userSelect: 'none',
+      background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 80%, #E6D2AE 100%)',
+      padding: '1.25rem',
+      borderRadius: '12px',
+      border: '3px solid var(--burgundy-primary)',
+      boxShadow: '0 12px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(140, 107, 35, 0.25)',
+      position: 'relative'
+    }}>
+      {/* Filete dorado interior */}
+      <div style={{
+        position: 'absolute',
+        top: '6px',
+        left: '6px',
+        right: '6px',
+        bottom: '6px',
+        border: '1.5px solid var(--gold-brass)',
+        borderRadius: '8px',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Encabezados de rangos */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '0.5rem',
-        marginBottom: '0.5rem',
+        gap: '0.45rem',
+        marginBottom: '0.55rem',
+        position: 'relative',
+        zIndex: 2
       }}>
         {headers.map((h, i) => (
           <div key={h} style={{
-            background: colColors[i],
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '0.8rem',
+            background: headerStyles[i],
+            color: 'var(--text-gold-emboss)',
+            fontFamily: 'var(--font-serif)',
+            fontWeight: '800',
+            fontSize: '0.85rem',
             textAlign: 'center',
-            padding: '0.5rem 0.1rem',
-            borderRadius: '0.75rem',
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+            padding: '0.5rem 0',
+            borderRadius: '8px',
+            border: '2px solid var(--gold-primary)',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3)',
+            textShadow: '0 2px 3px rgba(0,0,0,0.8)'
           }}>
             {h}
           </div>
         ))}
       </div>
 
-      {/* Filas del cartón */}
+      {/* Filas del cartón (Fichas de Marfil/Madera) */}
       {rows.map((row, rIndex) => (
         <div key={rIndex} style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '0.5rem',
-          marginBottom: '0.5rem',
+          gap: '0.45rem',
+          marginBottom: '0.45rem',
+          position: 'relative',
+          zIndex: 2
         }}>
           {row.map((cellValue, cIndex) => {
             const isMarked = markedNumbers.has(cellValue);
             const isCalled = calledNumbers.includes(cellValue) && !isMarked;
-            const gradColor = colColors[cIndex];
-            const solColor = solidColors[cIndex];
 
             return (
               <div
@@ -74,59 +98,56 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   aspectRatio: '1',
-                  borderRadius: '0.75rem',
-                  fontWeight: '700',
-                  fontSize: '1.5rem',
+                  borderRadius: '10px',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: '800',
+                  fontSize: '1.45rem',
                   cursor: 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  transition: 'all 0.2s ease',
+
+                  background: isMarked 
+                    ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 65%, #380C11 100%)' 
+                    : isCalled 
+                    ? 'radial-gradient(circle at center, #FFF9EB 0%, #F5E9CC 100%)'
+                    : 'radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F7EEDB 65%, #EADBBE 100%)',
                   
-                  // Styling
-                  background: isMarked ? gradColor : isCalled ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-card)',
-                  color: isMarked ? 'white' : 'var(--text-main)',
-                  border: isMarked ? 'none' : isCalled ? '3px solid #10b981' : '2px solid var(--border-color)',
-                  boxShadow: isMarked ? `0 8px 15px ${solColor}55` : 'none',
-                  transform: isMarked ? 'scale(1.05)' : 'scale(1)',
-                  zIndex: isMarked ? 10 : 1,
-                  overflow: 'hidden'
+                  color: isMarked ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                  
+                  border: isMarked 
+                    ? '2.5px solid var(--gold-primary)' 
+                    : isCalled 
+                    ? '2.5px solid var(--gold-brass)' 
+                    : '2px solid #C4B18F',
+                  
+                  boxShadow: isMarked 
+                    ? '0 6px 14px rgba(60, 16, 21, 0.6), inset 0 2px 4px rgba(255,255,255,0.3)' 
+                    : isCalled 
+                    ? '0 0 12px rgba(212, 175, 55, 0.65)' 
+                    : '0 3px 6px rgba(0,0,0,0.18), inset 0 1px 1px rgba(255,255,255,0.8)',
+                  
+                  transform: isMarked ? 'scale(1.04)' : 'scale(1)',
+                  textShadow: isMarked ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 0 rgba(255,255,255,0.6)'
                 }}
               >
                 <span>{cellValue}</span>
-                
+
                 {isMarked && (
                   <div style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    color: 'rgba(255,255,255,0.2)', 
+                    color: 'rgba(255, 241, 197, 0.22)',
+                    pointerEvents: 'none'
                   }}>
-                     <Check size={40} strokeWidth={4} />
+                    <Check size={42} strokeWidth={4} />
                   </div>
-                )}
-                
-                {isMarked && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-50%',
-                    left: '-50%',
-                    width: '200%',
-                    height: '200%',
-                    background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)',
-                    transform: 'rotate(45deg)',
-                    animation: 'shine 0.5s ease-out forwards',
-                  }} />
                 )}
               </div>
             );
           })}
         </div>
       ))}
-      <style>{`
-        @keyframes shine {
-          0% { left: -150%; top: -150%; }
-          100% { left: 150%; top: 150%; }
-        }
-      `}</style>
     </div>
   );
 };
