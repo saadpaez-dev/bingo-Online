@@ -18,6 +18,9 @@ const HostPanel = () => {
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const { playSound } = useSettings();
 
+  const roundEndingRef = useRef(false);
+  const winAnimationPlayedRef = useRef(false);
+
   const gameStateRef = useRef(null);
   useEffect(() => {
     gameStateRef.current = gameState;
@@ -30,7 +33,12 @@ const HostPanel = () => {
         const data = docSnap.data();
         setGameState(data);
         if (data.status === 'finished' && data.winners?.length > 0) {
-          triggerWinAnimation();
+          if (!winAnimationPlayedRef.current) {
+            winAnimationPlayedRef.current = true;
+            triggerWinAnimation();
+          }
+        } else if (data.status !== 'finished') {
+          winAnimationPlayedRef.current = false;
         }
 
         if (data.latestReaction && data.latestReaction.timestamp > Date.now() - 3000) {
@@ -49,7 +57,8 @@ const HostPanel = () => {
       setPlayers(playersData);
 
       const newWinners = playersData.filter(p => p.bingoClaimed && p.isValidated);
-      if (newWinners.length > 0 && gameStateRef.current?.status !== 'finished') {
+      if (newWinners.length > 0 && gameStateRef.current?.status === 'playing' && !roundEndingRef.current) {
+        roundEndingRef.current = true;
         endRound(newWinners);
       }
     });
@@ -62,22 +71,24 @@ const HostPanel = () => {
 
   const triggerWinAnimation = () => {
     playSound('win');
-    const duration = 6 * 1000;
-    const end = Date.now() + duration;
-    const frame = () => {
-      confetti({ particleCount: 12, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
-      confetti({ particleCount: 12, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
-      if (Date.now() < end) requestAnimationFrame(frame);
-    };
-    frame();
+    // Disparo único y liviano de confeti (sin bucles continuos)
+    confetti({
+      particleCount: 70,
+      spread: 65,
+      origin: { y: 0.6 },
+      colors: ['#5C1D24', '#D4AF37', '#2E7D32', '#F4E7CB']
+    });
   };
 
   const startGame = async () => {
     playSound('start');
+    roundEndingRef.current = false;
+    winAnimationPlayedRef.current = false;
     await updateDoc(doc(db, 'games', gameId), { status: 'playing', calledNumbers: [] });
   };
 
   const endRound = async (winners = []) => {
+    roundEndingRef.current = true;
     setAutoDrawInterval(prev => {
       if (prev) clearInterval(prev);
       return null;
@@ -86,28 +97,35 @@ const HostPanel = () => {
     const targetWins = gameStateRef.current?.targetWins || 3;
     let tournamentWinner = null;
 
-    // Actualizar victorias acumuladas de los ganadores de la ronda
+    // 1. Cambiar estado a finished para frenar cualquier llamada concurrente
+    await updateDoc(doc(db, 'games', gameId), {
+      status: 'finished',
+      winners: winners.map(w => w.name)
+    });
+
+    // 2. Incrementar +1 victoria exactamente una vez por ganador
     for (const w of winners) {
       const currentWins = (w.wins || 0) + 1;
-      await updateDoc(doc(db, 'games', gameId, 'players', w.id), {
-        wins: currentWins
-      });
-
       if (currentWins >= targetWins && !tournamentWinner) {
         tournamentWinner = w.name;
       }
+      await updateDoc(doc(db, 'games', gameId, 'players', w.id), {
+        wins: currentWins
+      });
     }
 
-    await updateDoc(doc(db, 'games', gameId), {
-      status: 'finished',
-      winners: winners.map(w => w.name),
-      tournamentWinner: tournamentWinner || null,
-      isTournamentOver: !!tournamentWinner
-    });
+    if (tournamentWinner) {
+      await updateDoc(doc(db, 'games', gameId), {
+        tournamentWinner: tournamentWinner,
+        isTournamentOver: true
+      });
+    }
   };
 
   // Siguiente ronda (conserva victorias y pagos)
   const nextRound = async () => {
+    roundEndingRef.current = false;
+    winAnimationPlayedRef.current = false;
     const currentRound = gameState?.currentRound || 1;
     await updateDoc(doc(db, 'games', gameId), { 
       status: 'waiting', 
@@ -128,6 +146,8 @@ const HostPanel = () => {
 
   // Reiniciar todo el torneo desde cero
   const resetEntireTournament = async () => {
+    roundEndingRef.current = false;
+    winAnimationPlayedRef.current = false;
     await updateDoc(doc(db, 'games', gameId), { 
       status: 'waiting', 
       calledNumbers: [], 

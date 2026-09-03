@@ -53,6 +53,7 @@ const PlayerPanel = () => {
   const [customAvatar, setCustomAvatar] = useState(null);
 
   const [lastCalledCount, setLastCalledCount] = useState(0);
+  const winAnimationPlayedRef = useRef(false);
 
   useEffect(() => {
     loginAnonymously().then(user => setUserId(user.uid));
@@ -69,7 +70,12 @@ const PlayerPanel = () => {
         }
 
         if (data.status === 'finished' && data.winners?.includes(name)) {
-          triggerWinAnimation();
+          if (!winAnimationPlayedRef.current) {
+            winAnimationPlayedRef.current = true;
+            triggerWinAnimation();
+          }
+        } else if (data.status !== 'finished') {
+          winAnimationPlayedRef.current = false;
         }
         
         if (data.latestReaction && data.latestReaction.timestamp > Date.now() - 3000) {
@@ -99,14 +105,13 @@ const PlayerPanel = () => {
 
   const triggerWinAnimation = useCallback(() => {
     playSound('win');
-    const duration = 5 * 1000;
-    const end = Date.now() + duration;
-    const frame = () => {
-      confetti({ particleCount: 8, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
-      confetti({ particleCount: 8, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#5C1D24', '#D4AF37', '#2E7D32'] });
-      if (Date.now() < end) requestAnimationFrame(frame);
-    };
-    frame();
+    // Disparo único y liviano de confeti (sin bucle continuo)
+    confetti({
+      particleCount: 70,
+      spread: 65,
+      origin: { y: 0.6 },
+      colors: ['#5C1D24', '#D4AF37', '#2E7D32', '#F4E7CB']
+    });
   }, [playSound]);
 
   const handleJoin = async (e) => {
