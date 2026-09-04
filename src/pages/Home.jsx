@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, collection, query, where, limit, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
-import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp, Eye, Crown, Radio } from 'lucide-react';
+import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp, Eye, Crown, Radio, Shield, Power } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import bgTable from '../assets/bg-table.jpg';
 
@@ -71,6 +71,15 @@ const Home = () => {
   const [activePlayerGame, setActivePlayerGame] = useState(null);
   const [playerGamePlayers, setPlayerGamePlayers] = useState([]);
   const [activeRooms, setActiveRooms] = useState([]);
+
+  // Modo Super Administrador (SAAD.PAEZ)
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => localStorage.getItem('bingo_admin_auth') === 'true');
+  const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
+  const [showAdminConfirmAllModal, setShowAdminConfirmAllModal] = useState(false);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
 
   const navigate = useNavigate();
   const { playSound } = useSettings();
@@ -176,7 +185,7 @@ const Home = () => {
       const q = query(
         collection(db, 'games'),
         where('status', 'in', ['waiting', 'playing']),
-        limit(8)
+        limit(50)
       );
       const unsubRooms = onSnapshot(q, (snapshot) => {
         const rooms = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -191,6 +200,62 @@ const Home = () => {
       console.warn('Error en listener de salas:', err);
     }
   }, []);
+
+  // Controladores de Super Administrador (SAAD.PAEZ)
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminUsername.trim().toUpperCase() === 'SAAD.PAEZ' && adminPassword === 'SAAD2026!') {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('bingo_admin_auth', 'true');
+      setShowAdminLoginModal(false);
+      setAdminLoginError('');
+      setAdminUsername('');
+      setAdminPassword('');
+      playSound('win');
+    } else {
+      setAdminLoginError('Usuario o contraseña incorrectos.');
+      playSound('pop');
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('bingo_admin_auth');
+    playSound('pop');
+  };
+
+  const handleAdminCloseRoom = async (roomId) => {
+    try {
+      await updateDoc(doc(db, 'games', roomId), {
+        status: 'closed',
+        closedAt: serverTimestamp(),
+        closedBy: 'admin'
+      });
+      playSound('pop');
+    } catch (err) {
+      console.error('Error cerrando sala por admin:', err);
+    }
+  };
+
+  const handleAdminCloseAllRooms = async () => {
+    setAdminActionLoading(true);
+    try {
+      const promises = activeRooms.map(r => 
+        updateDoc(doc(db, 'games', r.id), {
+          status: 'closed',
+          closedAt: serverTimestamp(),
+          closedBy: 'admin'
+        })
+      );
+      await Promise.all(promises);
+      setShowAdminConfirmAllModal(false);
+      playSound('win');
+    } catch (err) {
+      console.error('Error cerrando todas las salas:', err);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
 
   const generateGameId = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -254,6 +319,66 @@ const Home = () => {
         <FiligreeCorner position="top-right" />
         <FiligreeCorner position="bottom-left" />
         <FiligreeCorner position="bottom-right" />
+
+        {/* Acceso y Estado de Super Administrador (SAAD.PAEZ) */}
+        <div style={{ position: 'absolute', top: '14px', right: '16px', zIndex: 10 }}>
+          {isAdminLoggedIn ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              background: 'linear-gradient(180deg, #5C1D24 0%, #3D1015 100%)',
+              border: '1.5px solid var(--gold-primary)',
+              borderRadius: '20px',
+              padding: '4px 10px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+            }}>
+              <Shield size={13} color="#F6D58E" />
+              <span style={{ fontSize: '0.72rem', color: '#F6D58E', fontWeight: '800', fontFamily: 'var(--font-serif)', letterSpacing: '0.5px' }}>
+                SAAD.PAEZ
+              </span>
+              <button
+                type="button"
+                onClick={handleAdminLogout}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#FFB8B8',
+                  fontSize: '0.68rem',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: '0 2px'
+                }}
+                title="Cerrar sesión de Administrador"
+              >
+                Salir
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setShowAdminLoginModal(true); playSound('pop'); }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.75)',
+                border: '1px solid #C4B18F',
+                borderRadius: '16px',
+                padding: '3px 8px',
+                fontSize: '0.68rem',
+                color: '#5C1D24',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: '700',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}
+              title="Acceso de Administrador para gestionar salas"
+            >
+              <Shield size={12} /> Admin
+            </button>
+          )}
+        </div>
 
         {/* Medallón central */}
         <div className="vintage-medallion">
@@ -673,7 +798,7 @@ const Home = () => {
         </div>
 
         {/* SECCIÓN DE MESAS ABIERTAS EN VIVO */}
-        {activeRooms.length > 0 && (
+        {(activeRooms.length > 0 || isAdminLoggedIn) && (
           <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
             <AbacusDivider />
             
@@ -682,99 +807,459 @@ const Home = () => {
               <span>Mesas en Vivo ({activeRooms.length})</span>
             </div>
             
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.85rem' }}>
-              Salas abiertas para jugar o entrar a observar en tiempo real:
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
-              {activeRooms.map((room) => {
-                const isHost = activeHostGame?.id === room.id;
-                const isPlaying = room.status === 'playing';
-
-                return (
-                  <div
-                    key={room.id}
-                    style={{
-                      background: '#FFFDF9',
-                      border: isHost ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
-                      borderRadius: '8px',
-                      padding: '0.65rem 0.85rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    {/* Información de la Sala */}
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '900', fontSize: '1.1rem', color: 'var(--burgundy-primary)' }}>
-                          Sala {room.id}
-                        </span>
-                        <span style={{
-                          fontSize: '0.68rem',
-                          padding: '1px 6px',
-                          borderRadius: '999px',
-                          backgroundColor: isPlaying ? '#2E7D32' : '#F59E0B',
-                          color: '#fff',
-                          fontWeight: 'bold'
-                        }}>
-                          {isPlaying ? '● En Juego' : 'Esperando'}
-                        </span>
-                        {isHost && (
-                          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#92400E', fontWeight: 'bold' }}>
-                            👑 Tu Sala
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)' }}>
-                        {room.mode} Bolas • {room.paymentMode ? `Torneo (${room.cardPrice})` : 'Fichas Gratis'}
-                      </div>
+            {/* Panel de Control Super Administrador (SAAD.PAEZ) */}
+            {isAdminLoggedIn && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(92, 29, 36, 0.08) 0%, rgba(197, 155, 39, 0.12) 100%)',
+                border: '1.5px dashed var(--gold-primary)',
+                borderRadius: '8px',
+                padding: '0.6rem 0.85rem',
+                marginBottom: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textAlign: 'left' }}>
+                  <Shield size={16} color="var(--burgundy-primary)" />
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--burgundy-primary)' }}>
+                      Super Admin: SAAD.PAEZ
                     </div>
-
-                    {/* Botones de Acción */}
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      {isHost ? (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/host/${room.id}`)}
-                          className="btn-vintage-burgundy"
-                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                        >
-                          <Crown size={14} /> Gestionar
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/play/${room.id}`)}
-                            className="btn-vintage-burgundy"
-                            style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                          >
-                            <Play size={13} /> Jugar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/play/${room.id}?role=spectator`)}
-                            className="vintage-brass-plaque"
-                            style={{ margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                            title="Entrar solo a observar en vivo"
-                          >
-                            <Eye size={13} /> Observar
-                          </button>
-                        </>
-                      )}
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)' }}>
+                      {activeRooms.length === 0 ? 'Sin salas abiertas activas' : `${activeRooms.length} salas abiertas activas en el sistema`}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+
+                {activeRooms.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setShowAdminConfirmAllModal(true); playSound('pop'); }}
+                    className="btn-vintage-burgundy"
+                    style={{
+                      padding: '0.4rem 0.85rem',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      backgroundColor: '#8B1E26'
+                    }}
+                  >
+                    <Power size={13} /> Cerrar Todas las Salas
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeRooms.length === 0 && isAdminLoggedIn && (
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(46, 125, 50, 0.08)',
+                border: '1px solid #2E7D32',
+                borderRadius: '8px',
+                color: '#2E7D32',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>✓</span> Todas las salas han sido cerradas. Historial limpio.
+              </div>
+            )}
+
+            {activeRooms.length > 0 && (
+              <>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.85rem' }}>
+                  Salas abiertas para jugar o entrar a observar en tiempo real:
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {activeRooms.map((room) => {
+                    const isHost = activeHostGame?.id === room.id;
+                    const isPlaying = room.status === 'playing';
+
+                    return (
+                      <div
+                        key={room.id}
+                        style={{
+                          background: '#FFFDF9',
+                          border: isHost ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
+                          borderRadius: '8px',
+                          padding: '0.65rem 0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                          gap: '0.5rem',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        {/* Información de la Sala */}
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '900', fontSize: '1.1rem', color: 'var(--burgundy-primary)' }}>
+                              Sala {room.id}
+                            </span>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              padding: '1px 6px',
+                              borderRadius: '999px',
+                              backgroundColor: isPlaying ? '#2E7D32' : '#F59E0B',
+                              color: '#fff',
+                              fontWeight: 'bold'
+                            }}>
+                              {isPlaying ? '● En Juego' : 'Esperando'}
+                            </span>
+                            {isHost && (
+                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#92400E', fontWeight: 'bold' }}>
+                                👑 Tu Sala
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)' }}>
+                            {room.mode} Bolas • {room.paymentMode ? `Torneo (${room.cardPrice})` : 'Fichas Gratis'}
+                          </div>
+                        </div>
+
+                        {/* Botones de Acción */}
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                          {isHost ? (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/host/${room.id}`)}
+                              className="btn-vintage-burgundy"
+                              style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            >
+                              <Crown size={14} /> Gestionar
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/play/${room.id}`)}
+                                className="btn-vintage-burgundy"
+                                style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                              >
+                                <Play size={13} /> Jugar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/play/${room.id}?role=spectator`)}
+                                className="vintage-brass-plaque"
+                                style={{ margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                title="Entrar solo a observar en vivo"
+                              >
+                                <Eye size={13} /> Observar
+                              </button>
+                            </>
+                          )}
+
+                          {/* Botón de Clausura para Super Admin */}
+                          {isAdminLoggedIn && (
+                            <button
+                              type="button"
+                              onClick={() => handleAdminCloseRoom(room.id)}
+                              style={{
+                                background: '#7F1D1D',
+                                color: '#FEE2E2',
+                                border: '1px solid #991B1B',
+                                borderRadius: '6px',
+                                padding: '0.42rem 0.65rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Cerrar esta sala (Super Admin)"
+                            >
+                              <Power size={12} /> Cerrar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
       </div>
+
+      {/* MODAL DE INICIO DE SESIÓN SUPER ADMINISTRADOR */}
+      {showAdminLoginModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(10, 4, 2, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem',
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div className="vintage-parchment-card animate-pop text-center" style={{
+            maxWidth: '420px',
+            width: '100%',
+            padding: '2.5rem 2rem',
+            position: 'relative'
+          }}>
+            <FiligreeCorner position="top-left" />
+            <FiligreeCorner position="top-right" />
+            <FiligreeCorner position="bottom-left" />
+            <FiligreeCorner position="bottom-right" />
+
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 60%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.8rem',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+            }}>
+              🛡️
+            </div>
+
+            <h2 style={{
+              fontFamily: 'var(--font-serif)',
+              color: 'var(--burgundy-primary)',
+              fontSize: '1.4rem',
+              fontWeight: '900',
+              marginBottom: '0.4rem',
+              letterSpacing: '0.5px'
+            }}>
+              Acceso Administrador
+            </h2>
+            
+            <p style={{
+              fontSize: '0.85rem',
+              color: '#3E2415',
+              marginBottom: '1.25rem',
+              lineHeight: '1.4'
+            }}>
+              Ingresa tus credenciales para administrar y limpiar el historial de salas en vivo.
+            </p>
+
+            <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', textAlign: 'left' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--burgundy-primary)', marginBottom: '0.25rem', fontFamily: 'var(--font-serif)' }}>
+                  Usuario:
+                </label>
+                <input
+                  type="text"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  placeholder="Ej: SAAD.PAEZ"
+                  required
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.85rem',
+                    fontSize: '0.95rem',
+                    borderRadius: '6px',
+                    border: '1.5px solid var(--gold-brass)',
+                    backgroundColor: '#FFF',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: '700'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '800', color: 'var(--burgundy-primary)', marginBottom: '0.25rem', fontFamily: 'var(--font-serif)' }}>
+                  Contraseña:
+                </label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.85rem',
+                    fontSize: '0.95rem',
+                    borderRadius: '6px',
+                    border: '1.5px solid var(--gold-brass)',
+                    backgroundColor: '#FFF',
+                    fontFamily: 'var(--font-mono)'
+                  }}
+                />
+              </div>
+
+              {adminLoginError && (
+                <div style={{
+                  padding: '0.4rem 0.6rem',
+                  backgroundColor: '#FEE2E2',
+                  border: '1px solid #EF4444',
+                  borderRadius: '5px',
+                  color: '#B91C1C',
+                  fontSize: '0.78rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  {adminLoginError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdminLoginModal(false);
+                    setAdminLoginError('');
+                    playSound('pop');
+                  }}
+                  className="vintage-brass-plaque"
+                  style={{ flex: 1, margin: 0, padding: '0.65rem', fontSize: '0.88rem' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn-vintage-burgundy"
+                  style={{ flex: 1, margin: 0, padding: '0.65rem', fontSize: '0.88rem' }}
+                >
+                  Ingresar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PARA CERRAR TODAS LAS SALAS */}
+      {showAdminConfirmAllModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(10, 4, 2, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem',
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div className="vintage-parchment-card animate-pop text-center" style={{
+            maxWidth: '440px',
+            width: '100%',
+            padding: '2.5rem 2rem',
+            position: 'relative'
+          }}>
+            <FiligreeCorner position="top-left" />
+            <FiligreeCorner position="top-right" />
+            <FiligreeCorner position="bottom-left" />
+            <FiligreeCorner position="bottom-right" />
+
+            <div style={{
+              width: '68px',
+              height: '68px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 60%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+            }}>
+              ⚠️
+            </div>
+
+            <h2 style={{
+              fontFamily: 'var(--font-serif)',
+              color: 'var(--burgundy-primary)',
+              fontSize: '1.45rem',
+              fontWeight: '900',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.5px'
+            }}>
+              ¿Cerrar Todas las Salas?
+            </h2>
+
+            <p style={{
+              fontSize: '0.9rem',
+              color: '#3E2415',
+              marginBottom: '1rem',
+              lineHeight: '1.45'
+            }}>
+              Se clausurarán permanentemente las <strong>{activeRooms.length} salas abiertas</strong> registradas actualmente en el sistema.
+            </p>
+
+            <p style={{
+              fontSize: '0.78rem',
+              color: '#8B1E26',
+              fontStyle: 'italic',
+              marginBottom: '1.5rem'
+            }}>
+              * Las mesas en vivo se eliminarán de la pantalla principal inmediatamente y los jugadores conectados recibirán el aviso de sala clausurada.
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: '0.75rem',
+              justifyContent: 'center'
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAdminConfirmAllModal(false);
+                  playSound('pop');
+                }}
+                disabled={adminActionLoading}
+                className="vintage-brass-plaque"
+                style={{
+                  margin: 0,
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminCloseAllRooms}
+                disabled={adminActionLoading}
+                className="btn-vintage-burgundy"
+                style={{
+                  margin: 0,
+                  padding: '0.65rem 1.4rem',
+                  fontSize: '0.9rem',
+                  backgroundColor: '#8B0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <Power size={15} /> {adminActionLoading ? 'Cerrando salas...' : 'Sí, Cerrar Todas'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
