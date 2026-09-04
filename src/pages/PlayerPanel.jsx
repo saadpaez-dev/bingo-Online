@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
-import { generateCard75, generateCard90, validateBingo75, validateBingo90 } from '../utils/bingo';
+import { generateCard75, generateCard90, validateBingo75, validateBingo90, calculateCardProgress } from '../utils/bingo';
 import BingoCard75 from '../components/BingoCard75';
 import BingoCard90 from '../components/BingoCard90';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
-import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye } from 'lucide-react';
+import BingoRaceModal from '../components/BingoRaceModal';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 
@@ -52,8 +53,22 @@ const PlayerPanel = () => {
   const [customAvatar, setCustomAvatar] = useState(null);
 
   const [lastCalledCount, setLastCalledCount] = useState(0);
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [showRaceModal, setShowRaceModal] = useState(false);
+  const [selectedObservedPlayerId, setSelectedObservedPlayerId] = useState(null);
   const winAnimationPlayedRef = useRef(false);
   const prevApprovedRef = useRef(false);
+
+  // Listener de todos los jugadores de la sala (para la Carrera al Bingo y para el Observador)
+  useEffect(() => {
+    if (!gameId) return;
+    const playersRef = collection(db, 'games', gameId, 'players');
+    const unsubscribe = onSnapshot(playersRef, (snapshot) => {
+      const pList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAllPlayers(pList);
+    });
+    return () => unsubscribe();
+  }, [gameId]);
 
   // Inicialización y auto-reconexión si el jugador ya estaba registrado en la sala
   useEffect(() => {
@@ -577,6 +592,25 @@ const PlayerPanel = () => {
     else currentLetter = 'O';
   }
 
+  // Jugadores activos con cartón en la sala
+  const playingPlayers = allPlayers.filter(p => p.role !== 'spectator' && p.card);
+  
+  // Jugador seleccionado para inspeccionar en modo observador
+  const observedPlayer = playingPlayers.find(p => p.id === selectedObservedPlayerId) || playingPlayers[0] || null;
+  const observedProgress = observedPlayer ? calculateCardProgress(observedPlayer.card, gameState.mode, called) : null;
+
+  const currentObservedIndex = playingPlayers.findIndex(p => p.id === observedPlayer?.id);
+  const handlePrevObserved = () => {
+    if (playingPlayers.length <= 1) return;
+    const newIdx = (currentObservedIndex - 1 + playingPlayers.length) % playingPlayers.length;
+    setSelectedObservedPlayerId(playingPlayers[newIdx].id);
+  };
+  const handleNextObserved = () => {
+    if (playingPlayers.length <= 1) return;
+    const newIdx = (currentObservedIndex + 1) % playingPlayers.length;
+    setSelectedObservedPlayerId(playingPlayers[newIdx].id);
+  };
+
   return (
     <div className="app-container animate-pop" style={{ position: 'relative' }}>
       
@@ -627,29 +661,54 @@ const PlayerPanel = () => {
           </div>
         </div>
 
-        {/* Marcador de Victorias del Jugador en el Torneo o Modo Observador */}
-        {isSpectator ? (
-          <div style={{ textAlign: 'right' }}>
-            <span className="vintage-brass-plaque" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}>
-              <Eye size={15} /> Modo Observador
-            </span>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem' }}>
-              En Vivo
+        {/* Marcador de Victorias del Jugador en el Torneo o Modo Observador y Botón Carrera */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          
+          {/* Botón para abrir la Carrera hacia el Bingo (Consultar rivales y cerrar) */}
+          {playingPlayers.length > 0 && (
+            <button
+              onClick={() => setShowRaceModal(true)}
+              className="vintage-brass-plaque animate-pop"
+              style={{
+                cursor: 'pointer',
+                padding: '0.4rem 0.75rem',
+                fontSize: '0.82rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                backgroundColor: '#FAF4E5',
+                color: '#3A1015'
+              }}
+              title="Consultar cómo van tus rivales hacia el Bingo"
+            >
+              <Flame size={16} color="#E65100" />
+              <span>Carrera al Bingo</span>
+            </button>
+          )}
+
+          {isSpectator ? (
+            <div style={{ textAlign: 'right' }}>
+              <span className="vintage-brass-plaque" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}>
+                <Eye size={15} /> Modo Observador
+              </span>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                En Vivo
+              </div>
             </div>
-          </div>
-        ) : (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
-              <Trophy size={18} color="#C59B27" />
-              <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
-                {playerData?.wins || 0} / {targetWins}
+          ) : (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                <Trophy size={18} color="#C59B27" />
+                <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
+                  {playerData?.wins || 0} / {targetWins}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+                Meta del Torneo
               </span>
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
-              Meta del Torneo
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ÁREA DE ÚLTIMA BOLA (BOLA 3D DE MADERA TALLADA) */}
@@ -727,50 +786,228 @@ const PlayerPanel = () => {
          ========================================================= */}
       <div style={{ margin: '0 auto', width: '100%' }}>
         {isSpectator ? (
-          <div className="vintage-parchment-card text-center animate-pop" style={{
-            padding: '2rem 1.5rem',
-            margin: '0.5rem auto',
-            maxWidth: '520px',
-            border: '2px dashed var(--gold-brass)',
-            background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              margin: '0 auto 0.75rem',
-              background: '#FEF3C7',
-              color: '#92400E',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+          playingPlayers.length === 0 ? (
+            <div className="vintage-parchment-card text-center animate-pop" style={{
+              padding: '2rem 1.5rem',
+              margin: '0.5rem auto',
+              maxWidth: '520px',
+              border: '2px dashed var(--gold-brass)',
+              background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)'
             }}>
-              <Eye size={30} />
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                margin: '0 auto 0.75rem',
+                background: '#FEF3C7',
+                color: '#92400E',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Eye size={30} />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-vintage-dark)', margin: '0 0 0.4rem' }}>
+                Modo Observador en Vivo
+              </h3>
+              <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '400px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
+                Esperando que los jugadores conecten sus cartones a la mesa para comenzar a inspeccionar la partida.
+              </p>
+              {gameState.paymentMode && (
+                <button 
+                  className="btn-vintage-burgundy"
+                  onClick={upgradeToPlayer}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.85rem 1.6rem',
+                    fontSize: '1.05rem',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                  }}
+                >
+                  <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
+                </button>
+              )}
             </div>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-vintage-dark)', margin: '0 0 0.4rem' }}>
-              Estás viendo la partida en vivo
-            </h3>
-            <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '400px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
-              Disfruta la emoción, envía comentarios al streaming y comparte con la familia. Si deseas competir por el premio del torneo, puedes inscribirte en cualquier momento.
-            </p>
-
-            {gameState.paymentMode && (
-              <button 
-                className="btn-vintage-burgundy"
-                onClick={upgradeToPlayer}
-                style={{
-                  display: 'inline-flex',
+          ) : (
+            <div style={{ maxWidth: '540px', margin: '0 auto' }}>
+              
+              {/* Barra de Selección de Cartones de Jugadores */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <div style={{
+                  display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.4rem',
+                  padding: '0 0.25rem'
+                }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-vintage-muted)' }}>
+                    👁️ SELECCIONA EL CARTÓN A INSPECCIONAR:
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
+                    {playingPlayers.length} Jugadores
+                  </span>
+                </div>
+
+                {/* Chips de Jugadores */}
+                <div style={{
+                  display: 'flex',
                   gap: '0.5rem',
-                  padding: '0.85rem 1.6rem',
-                  fontSize: '1.05rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                }}
-              >
-                <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
-              </button>
-            )}
-          </div>
+                  overflowX: 'auto',
+                  padding: '0.35rem 0.2rem',
+                  scrollbarWidth: 'thin'
+                }}>
+                  {playingPlayers.map(p => {
+                    const isSelected = p.id === observedPlayer?.id;
+                    const pProg = calculateCardProgress(p.card, gameState.mode, called);
+
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedObservedPlayerId(p.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.45rem',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '999px',
+                          background: isSelected 
+                            ? 'linear-gradient(180deg, #7E252D 0%, #3F1015 100%)' 
+                            : 'linear-gradient(180deg, #FFFDF9 0%, #FAF4E5 100%)',
+                          color: isSelected ? '#FAF4E5' : 'var(--text-vintage-dark)',
+                          border: isSelected ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? '0 4px 10px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                          flexShrink: 0,
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <div style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem'
+                        }}>
+                          {p.isCustomAvatar ? (
+                            <img src={p.avatar} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            p.avatar || '👤'
+                          )}
+                        </div>
+
+                        <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                          {p.name}
+                        </span>
+
+                        <span style={{
+                          backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : '#E6D2AE',
+                          color: isSelected ? '#FFF' : '#3A1015',
+                          fontSize: '0.7rem',
+                          padding: '1px 5px',
+                          borderRadius: '999px',
+                          fontWeight: '900'
+                        }}>
+                          {pProg.percentage}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cabecera del Cartón Seleccionado con Navegación Anterior / Siguiente */}
+              {observedPlayer && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                  borderRadius: '10px',
+                  border: '2px solid var(--gold-brass)',
+                  padding: '0.55rem 0.85rem',
+                  marginBottom: '0.75rem',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handlePrevObserved}
+                    disabled={playingPlayers.length <= 1}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                    title="Ver cartón anterior"
+                  >
+                    <ChevronLeft size={16} /> Ant.
+                  </button>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                      <Eye size={16} color="#7E252D" />
+                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1rem', color: '#3A1015' }}>
+                        Cartón de {observedPlayer.name}
+                      </span>
+                      {observedProgress?.missing === 1 ? (
+                        <span style={{ backgroundColor: '#B71C1C', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', animation: 'pulse 1s infinite' }}>
+                          🔥 ¡A 1 BOLA!
+                        </span>
+                      ) : observedProgress?.missing === 2 ? (
+                        <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', border: '1px solid #F59E0B' }}>
+                          🤞 ¡A 2 BOLAS!
+                        </span>
+                      ) : (
+                        <span style={{ backgroundColor: '#7E252D', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold' }}>
+                          {observedProgress?.percentage}%
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '1px' }}>
+                      {observedProgress?.matched} de {observedProgress?.total} bolas acertadas en vivo (Faltan {observedProgress?.missing})
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleNextObserved}
+                    disabled={playingPlayers.length <= 1}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                    title="Ver cartón siguiente"
+                  >
+                    Sig. <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+
+              {/* Render del Cartón del Jugador Observado en Modo Solo Lectura (Estampado en Vivo) */}
+              {observedPlayer && (
+                gameState.mode === 75 
+                  ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
+                  : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
+              )}
+
+              {/* Botón de Inscripción si decide jugar */}
+              {gameState.paymentMode && (
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <button 
+                    className="btn-vintage-burgundy"
+                    onClick={upgradeToPlayer}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 1.6rem',
+                      fontSize: '1rem',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                    }}
+                  >
+                    <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
+                  </button>
+                </div>
+              )}
+            </div>
+          )
         ) : (
           playerData?.card && (
             gameState.mode === 75 
@@ -852,6 +1089,16 @@ const PlayerPanel = () => {
           isCustomAvatar: playerData?.isCustomAvatar,
           isHost: false
         }}
+      />
+
+      {/* Modal Desplegable de la Carrera hacia el Bingo */}
+      <BingoRaceModal
+        isOpen={showRaceModal}
+        onClose={() => setShowRaceModal(false)}
+        players={allPlayers}
+        calledNumbers={called}
+        mode={gameState.mode}
+        currentUserId={userId}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
+import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 
 const HostPanel = () => {
   const { gameId } = useParams();
@@ -427,6 +428,13 @@ const HostPanel = () => {
           ))}
         </div>
       </div>
+
+      {/* CARRERA HACIA EL BINGO EN VIVO (PORCENTAJE POR CADA JUGADOR) */}
+      <BingoRaceHostWidget
+        players={players}
+        calledNumbers={called}
+        mode={gameState.mode}
+      />
 
       {/* ÁREA PRINCIPAL MODO SALA / TV */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>

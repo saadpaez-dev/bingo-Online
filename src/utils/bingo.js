@@ -71,3 +71,34 @@ export const validateBingo90 = (flatGrid, calledNumbers) => {
   const calledSet = new Set(calledNumbers);
   return flatGrid.every(num => calledSet.has(num));
 };
+
+// Calcular progreso exacto del cartón hacia el Bingo (porcentaje y bolas faltantes)
+export const calculateCardProgress = (card, mode, calledNumbers = []) => {
+  if (!card) return { matched: 0, total: mode === 75 ? 24 : 15, missing: mode === 75 ? 24 : 15, percentage: 0 };
+  const calledSet = new Set(calledNumbers);
+
+  if (mode === 75) {
+    let matched = 0;
+    const total = 24; // 25 casillas menos 'FREE'
+    Object.values(card).forEach(col => {
+      col.forEach(num => {
+        if (num !== 'FREE' && calledSet.has(num)) {
+          matched++;
+        }
+      });
+    });
+    const percentage = Math.round((matched / total) * 100);
+    return { matched, total, missing: Math.max(0, total - matched), percentage };
+  } else {
+    // 90 bolas: array plano de 15 números
+    const total = 15;
+    let matched = 0;
+    if (Array.isArray(card)) {
+      card.forEach(num => {
+        if (calledSet.has(num)) matched++;
+      });
+    }
+    const percentage = Math.round((matched / total) * 100);
+    return { matched, total, missing: Math.max(0, total - matched), percentage };
+  }
+};
