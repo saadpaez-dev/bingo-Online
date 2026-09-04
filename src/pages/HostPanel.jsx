@@ -17,6 +17,7 @@ const HostPanel = () => {
   const [gameState, setGameState] = useState(null);
   const [players, setPlayers] = useState([]);
   const [intervalTime, setIntervalTime] = useState(5);
+  const [spinDuration, setSpinDuration] = useState(3);
   const [activeReactions, setActiveReactions] = useState([]);
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
@@ -266,15 +267,16 @@ const HostPanel = () => {
 
     setIsRouletteSpinning(true);
 
-    // Tras el giro de 3 segundos de la ruleta, sincronizar en Firestore
+    // Tras el giro configurable de la ruleta, sincronizar en Firestore
+    const timeoutMs = Math.max(500, Math.round(spinDuration * 1000 - 50));
     setTimeout(async () => {
       playSound('pop');
       await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
       setIsRouletteSpinning(false);
-    }, 2950);
+    }, timeoutMs);
 
     return nextNum;
-  }, [gameId, playSound, isRouletteSpinning, autoDrawInterval]);
+  }, [gameId, playSound, isRouletteSpinning, autoDrawInterval, spinDuration]);
 
   const toggleAutoDraw = () => {
     if (autoDrawInterval) {
@@ -669,6 +671,8 @@ const HostPanel = () => {
                 disabled={autoDrawInterval !== null || isRouletteSpinning}
                 remainingCount={maxNumber - called.length}
                 gameMode={gameState.mode}
+                spinDuration={spinDuration}
+                onDurationChange={setSpinDuration}
               />
 
               {/* Controles de velocidad y Sorteo Automático */}

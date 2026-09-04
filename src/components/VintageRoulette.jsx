@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
+import { Clock } from 'lucide-react';
 
 // Generador de casillas para 75 o 90 bolas intercalando letras y columnas
 const generatePockets = (mode) => {
@@ -44,7 +45,9 @@ const VintageRoulette = ({
   currentLetter,
   disabled,
   remainingCount,
-  gameMode = 75
+  gameMode = 75,
+  spinDuration = 3,
+  onDurationChange
 }) => {
   const pockets = useMemo(() => generatePockets(gameMode), [gameMode]);
   const totalSlices = pockets.length;
@@ -150,13 +153,13 @@ const VintageRoulette = ({
     let diff = desiredMod - currentMod;
     if (diff <= 0) diff += 360;
 
-    const extraTurns = (5 + Math.floor(Math.random() * 2)) * 360;
+    const extraTurns = Math.max(3, Math.round(spinDuration * 1.8)) * 360;
     const targetRot = rotation + extraTurns + diff;
-    const duration = 2950;
+    const duration = Math.max(500, Math.round(spinDuration * 1000 - 50));
     const startTime = performance.now();
     const initialRot = rotation;
 
-    let clickInterval = 45;
+    let clickInterval = Math.max(25, 45 / (spinDuration / 3));
     lastClickTimeRef.current = startTime;
 
     const animate = (currentTime) => {
@@ -176,7 +179,7 @@ const VintageRoulette = ({
       if (currentTime - lastClickTimeRef.current > clickInterval) {
         playClickSound(Math.max(0.08, 0.3 * (1 - progress * 0.8)));
         lastClickTimeRef.current = currentTime;
-        clickInterval = 40 + Math.pow(progress, 2) * 280;
+        clickInterval = 35 + Math.pow(progress, 2) * (spinDuration * 85);
       }
 
       if (progress < 1) {
@@ -624,6 +627,48 @@ const VintageRoulette = ({
           </div>
         </div>
 
+      </div>
+
+      {/* SELECTOR VINTAGE DE DURACIÓN DEL GIRO */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: '0.45rem', 
+        marginBottom: '0.65rem',
+        background: '#FAF4E5',
+        border: '1.5px solid var(--gold-brass)',
+        borderRadius: '8px',
+        padding: '0.35rem 0.75rem',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+      }}>
+        <Clock size={15} color="#8C6B23" />
+        <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-serif)', fontWeight: 'bold', color: 'var(--text-vintage-dark)' }}>
+          Duración del Giro:
+        </span>
+        <select
+          value={spinDuration}
+          onChange={(e) => onDurationChange && onDurationChange(Number(e.target.value))}
+          disabled={disabled || isAnimating}
+          style={{
+            background: '#fff',
+            border: '1.5px solid var(--gold-brass)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontFamily: 'var(--font-serif)',
+            fontWeight: 'bold',
+            padding: '0.2rem 0.5rem',
+            cursor: disabled || isAnimating ? 'not-allowed' : 'pointer',
+            color: 'var(--burgundy-primary)'
+          }}
+        >
+          <option value={1.5}>Rápido (1.5 seg)</option>
+          <option value={2}>Ágil (2 seg)</option>
+          <option value={3}>Estándar (3 seg)</option>
+          <option value={4}>Suspenso (4 seg)</option>
+          <option value={5}>Dramático (5 seg)</option>
+          <option value={7}>Casino Real (7 seg)</option>
+        </select>
       </div>
 
       {/* BOTÓN 3D DE GIRO DE RULETA */}
