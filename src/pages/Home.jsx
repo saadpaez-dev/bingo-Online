@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
-import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp, Eye, Crown, Radio } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import bgTable from '../assets/bg-table.jpg';
 
 const FiligreeCorner = ({ position }) => (
   <svg 
@@ -64,8 +65,59 @@ const Home = () => {
   const [cardPrice, setCardPrice] = useState('$5.000 COP');
   const [prizeType, setPrizeType] = useState('chips'); // 'chips' | 'cash'
 
+  // Sala activa del Anfitrión (Reconexión rápida) y Salas Públicas en vivo
+  const [activeHostGame, setActiveHostGame] = useState(null);
+  const [activeRooms, setActiveRooms] = useState([]);
+
   const navigate = useNavigate();
   const { playSound } = useSettings();
+
+  // 1. Escuchar la sala activa del Anfitrión si existe en localStorage
+  useEffect(() => {
+    const savedHostGameId = localStorage.getItem('bingo_dealer_active_game');
+    if (!savedHostGameId) return;
+
+    const unsub = onSnapshot(doc(db, 'games', savedHostGameId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.status !== 'archived') {
+          setActiveHostGame({ id: savedHostGameId, ...data });
+        } else {
+          setActiveHostGame(null);
+          localStorage.removeItem('bingo_dealer_active_game');
+        }
+      } else {
+        setActiveHostGame(null);
+        localStorage.removeItem('bingo_dealer_active_game');
+      }
+    }, (err) => {
+      console.warn('Error verificando sala de anfitrión:', err);
+    });
+
+    return () => unsub();
+  }, []);
+
+  // 2. Escuchar salas abiertas en vivo en Firestore
+  useEffect(() => {
+    try {
+      const q = query(
+        collection(db, 'games'),
+        where('status', 'in', ['waiting', 'playing']),
+        limit(8)
+      );
+      const unsubRooms = onSnapshot(q, (snapshot) => {
+        const rooms = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        rooms.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        setActiveRooms(rooms);
+      }, (err) => {
+        console.warn('Error cargando salas en vivo:', err);
+      });
+
+      return () => unsubRooms();
+    } catch (err) {
+      console.warn('Error en listener de salas:', err);
+    }
+  }, []);
 
   const generateGameId = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -91,6 +143,7 @@ const Home = () => {
         createdAt: new Date().toISOString()
       });
 
+      localStorage.setItem('bingo_dealer_active_game', gameId);
       navigate(`/host/${gameId}`);
     } catch (error) {
       console.error("Error creating game", error);
@@ -114,7 +167,12 @@ const Home = () => {
   };
 
   return (
-    <div className="home-page-wrapper">
+    <div 
+      className="home-page-wrapper"
+      style={{
+        backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.75) 100%), url(${bgTable})`
+      }}
+    >
       
       {/* TARJETA DE PERGAMINO VINTAGE */}
       <div className="vintage-parchment-card animate-pop">
@@ -139,6 +197,73 @@ const Home = () => {
           </div>
           <p className="vintage-subtitle">La mejor experiencia multijugador en tiempo real</p>
         </div>
+
+        {/* AVISO DESTACADO DE REANUDAR MESA SI EL DEALER SALIÓ AL INICIO */}
+        {activeHostGame && (
+          <div className="animate-pop" style={{
+            background: 'linear-gradient(180deg, #FFFDF8 0%, #FAF0DA 100%)',
+            border: '2px solid var(--gold-primary)',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+            gap: '0.65rem',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle at 35% 30%, #7E252D 0%, #3F1015 100%)',
+                border: '2px solid var(--gold-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+              }}>
+                👑
+              </div>
+              <div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  Tu Sala como Anfitrión
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: '900', color: 'var(--burgundy-primary)', lineHeight: 1.1 }}>
+                  Sala {activeHostGame.id}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#1B5E20', fontWeight: 'bold' }}>
+                  ● {activeHostGame.status === 'playing' ? `En Juego (Ronda ${activeHostGame.currentRound || 1})` : 'Mesa en Espera'}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => navigate(`/host/${activeHostGame.id}`)}
+                className="btn-vintage-burgundy"
+                style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
+              >
+                <Play size={14} /> Volver a la Mesa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('bingo_dealer_active_game');
+                  setActiveHostGame(null);
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-vintage-muted)', padding: '0.2rem 0.4rem', fontSize: '1.1rem' }}
+                title="Descartar aviso de sala"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* SECCIÓN CREAR PARTIDA */}
         <div style={{ marginBottom: '1.25rem' }}>
@@ -396,6 +521,108 @@ const Home = () => {
             </button>
           </form>
         </div>
+
+        {/* SECCIÓN DE MESAS ABIERTAS EN VIVO */}
+        {activeRooms.length > 0 && (
+          <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+            <AbacusDivider />
+            
+            <div className="vintage-section-header" style={{ marginTop: '1rem', justifyContent: 'center' }}>
+              <Radio size={20} color="#C59B27" />
+              <span>Mesas en Vivo ({activeRooms.length})</span>
+            </div>
+            
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.85rem' }}>
+              Salas abiertas para jugar o entrar a observar en tiempo real:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+              {activeRooms.map((room) => {
+                const isHost = activeHostGame?.id === room.id;
+                const isPlaying = room.status === 'playing';
+
+                return (
+                  <div
+                    key={room.id}
+                    style={{
+                      background: '#FFFDF9',
+                      border: isHost ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    {/* Información de la Sala */}
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '900', fontSize: '1.1rem', color: 'var(--burgundy-primary)' }}>
+                          Sala {room.id}
+                        </span>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          padding: '1px 6px',
+                          borderRadius: '999px',
+                          backgroundColor: isPlaying ? '#2E7D32' : '#F59E0B',
+                          color: '#fff',
+                          fontWeight: 'bold'
+                        }}>
+                          {isPlaying ? '● En Juego' : 'Esperando'}
+                        </span>
+                        {isHost && (
+                          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#92400E', fontWeight: 'bold' }}>
+                            👑 Tu Sala
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)' }}>
+                        {room.mode} Bolas • {room.paymentMode ? `Torneo (${room.cardPrice})` : 'Fichas Gratis'}
+                      </div>
+                    </div>
+
+                    {/* Botones de Acción */}
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {isHost ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/host/${room.id}`)}
+                          className="btn-vintage-burgundy"
+                          style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <Crown size={14} /> Gestionar
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/play/${room.id}`)}
+                            className="btn-vintage-burgundy"
+                            style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                          >
+                            <Play size={13} /> Jugar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/play/${room.id}?role=spectator`)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            title="Entrar solo a observar en vivo"
+                          >
+                            <Eye size={13} /> Observar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </div>
 

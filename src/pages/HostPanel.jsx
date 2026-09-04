@@ -30,6 +30,9 @@ const HostPanel = () => {
   }, [gameState]);
 
   useEffect(() => {
+    if (gameId) {
+      localStorage.setItem('bingo_dealer_active_game', gameId);
+    }
     const gameRef = doc(db, 'games', gameId);
     const unsubscribeGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {

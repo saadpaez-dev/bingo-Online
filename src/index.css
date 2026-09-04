@@ -685,25 +685,20 @@ body::before {
   min-height: calc(100vh - 60px);
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   background-color: #1a0b06;
-  background-image: 
-    radial-gradient(circle at 50% 15%, rgba(255, 230, 180, 0.08) 0%, rgba(20, 8, 4, 0.3) 70%),
-    url('/bg-table.jpg');
   background-size: cover;
-  background-position: center center;
+  background-position: center top;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-  padding: 1.5rem 1rem 3rem;
+  padding: 2rem 1rem 4rem;
   box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
 }
 
 @media (max-width: 768px) {
   .home-page-wrapper {
-    background-attachment: scroll;
-    background-position: center top;
-    padding: 1rem 0.5rem 2rem;
+    padding: 1.25rem 0.5rem 3rem;
   }
 }
 

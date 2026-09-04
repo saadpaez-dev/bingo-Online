@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
 import { generateCard75, generateCard90, validateBingo75, validateBingo90, calculateCardProgress } from '../utils/bingo';
@@ -38,6 +38,8 @@ const FiligreeCorner = ({ position }) => (
 const PlayerPanel = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedRole = searchParams.get('role'); // 'spectator'
   const [name, setName] = useState('');
   const [hasJoined, setHasJoined] = useState(false);
   const [gameState, setGameState] = useState(null);
@@ -389,8 +391,52 @@ const PlayerPanel = () => {
               </div>
             </div>
 
-            {/* Caja Destacada de Inscripción al Torneo si es de pago */}
-            {gameState.paymentMode ? (
+            {/* Banner si viene con invitación de Observador */}
+            {requestedRole === 'spectator' && (
+              <div style={{
+                background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)',
+                border: '1.5px solid var(--gold-brass)',
+                borderRadius: '8px',
+                padding: '0.6rem 0.85rem',
+                fontSize: '0.85rem',
+                color: '#3A1015',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                maxWidth: '340px',
+                width: '100%',
+                fontWeight: 'bold',
+                fontFamily: 'var(--font-serif)',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+              }}>
+                <Eye size={18} color="#8C6B23" />
+                <span>Modo Observador: Podrás ver el bolillero y los cartones en tiempo real.</span>
+              </div>
+            )}
+
+            {/* Opciones de Entrada */}
+            {requestedRole === 'spectator' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: '100%', maxWidth: '340px' }}>
+                <button 
+                  type="button" 
+                  className="btn-vintage-burgundy" 
+                  disabled={!name.trim()}
+                  onClick={(e) => handleJoin(e, 'spectator')}
+                  style={{ width: '100%', padding: '0.85rem 0.5rem', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  <Eye size={18} /> Entrar a Observar en Vivo
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  disabled={!name.trim()}
+                  onClick={(e) => handleJoin(e, 'paid')}
+                  style={{ width: '100%', padding: '0.6rem 0.5rem', fontSize: '0.88rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                >
+                  Cambiar a Jugar con Cartón
+                </button>
+              </div>
+            ) : gameState.paymentMode ? (
               <div 
                 style={{ 
                   width: '100%', 
@@ -432,7 +478,7 @@ const PlayerPanel = () => {
 
                   <button 
                     type="button" 
-                    className="btn btn-secondary"
+                    className="btn btn-secondary" 
                     disabled={!name.trim()}
                     onClick={(e) => handleJoin(e, 'spectator')}
                     style={{ 
@@ -452,15 +498,37 @@ const PlayerPanel = () => {
                 </div>
               </div>
             ) : (
-              <button 
-                type="button" 
-                className="btn-vintage-burgundy" 
-                disabled={!name.trim()}
-                onClick={(e) => handleJoin(e, 'paid')}
-                style={{ width: '100%', maxWidth: '340px' }}
-              >
-                Entrar a Jugar Gratis
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: '100%', maxWidth: '340px' }}>
+                <button 
+                  type="button" 
+                  className="btn-vintage-burgundy" 
+                  disabled={!name.trim()}
+                  onClick={(e) => handleJoin(e, 'paid')}
+                  style={{ width: '100%', padding: '0.85rem 0.5rem', fontSize: '1.05rem' }}
+                >
+                  Entrar a Jugar Gratis
+                </button>
+
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  disabled={!name.trim()}
+                  onClick={(e) => handleJoin(e, 'spectator')}
+                  style={{ 
+                    width: '100%',
+                    padding: '0.65rem 0.5rem',
+                    fontSize: '0.95rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontFamily: 'var(--font-serif)',
+                    fontWeight: '700'
+                  }}
+                >
+                  <Eye size={17} /> Solo Observador (Ver en Vivo)
+                </button>
+              </div>
             )}
 
           </form>
