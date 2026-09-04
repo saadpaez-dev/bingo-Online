@@ -67,13 +67,15 @@ const ChatBox = ({ gameId, currentUser }) => {
     const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(80));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const msgs = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(m => !m.isReaction);
       setMessages(msgs);
 
-      if (initialLoadDone.current && !isOpen && snapshot.docChanges().some(c => c.type === 'added')) {
+      if (initialLoadDone.current && !isOpen && snapshot.docChanges().some(c => c.type === 'added' && !c.doc.data().isReaction)) {
         setUnreadCount(prev => prev + 1);
         playSound('pop');
       }

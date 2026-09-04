@@ -34,17 +34,17 @@ const LiveCommentsOverlay = ({ gameId }) => {
             createdAt: Date.now()
           };
 
-          // Si es una reacción (emoji), lanzar chorro de partículas flotantes estilo TikTok/Instagram Live
+          // Si es una reacción de icono, solo lanzar la animación flotante del lado derecho
           if (isReaction) {
             spawnStreamParticles(data.text);
+          } else {
+            // Solo los comentarios de texto van al feed lateral izquierdo
+            setActiveComments((prev) => [item, ...prev.slice(0, 3)]);
+
+            setTimeout(() => {
+              setActiveComments((prev) => prev.filter((c) => c.id !== item.id));
+            }, 7000);
           }
-
-          // Agregar al feed de streaming lateral
-          setActiveComments((prev) => [item, ...prev.slice(0, 3)]);
-
-          setTimeout(() => {
-            setActiveComments((prev) => prev.filter((c) => c.id !== item.id));
-          }, isReaction ? 5000 : 7000);
         }
       });
     });
