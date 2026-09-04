@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
+import VintageRoulette from '../components/VintageRoulette';
 import bgTable from '../assets/bg-table.jpg';
 
 const HostPanel = () => {
@@ -18,6 +19,7 @@ const HostPanel = () => {
   const [intervalTime, setIntervalTime] = useState(5);
   const [activeReactions, setActiveReactions] = useState([]);
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
+  const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const { playSound } = useSettings();
@@ -237,6 +239,42 @@ const HostPanel = () => {
     playSound('pop');
     await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
   }, [gameId, playSound]);
+
+  const handleManualRouletteSpin = useCallback(async () => {
+    if (isRouletteSpinning || autoDrawInterval !== null) return null;
+
+    const gameRef = doc(db, 'games', gameId);
+    const snap = await getDoc(gameRef);
+    if (!snap.exists()) return null;
+
+    const freshState = snap.data();
+    if (freshState.status !== 'playing') return null;
+
+    const maxNumber = freshState.mode === 75 ? 75 : 90;
+    const called = freshState.calledNumbers || [];
+
+    if (called.length >= maxNumber) {
+      endRound([]);
+      return null;
+    }
+
+    let nextNum;
+    const calledSet = new Set(called);
+    do {
+      nextNum = Math.floor(Math.random() * maxNumber) + 1;
+    } while (calledSet.has(nextNum));
+
+    setIsRouletteSpinning(true);
+
+    // Tras el giro de 3 segundos de la ruleta, sincronizar en Firestore
+    setTimeout(async () => {
+      playSound('pop');
+      await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
+      setIsRouletteSpinning(false);
+    }, 2950);
+
+    return nextNum;
+  }, [gameId, playSound, isRouletteSpinning, autoDrawInterval]);
 
   const toggleAutoDraw = () => {
     if (autoDrawInterval) {
@@ -607,72 +645,43 @@ const HostPanel = () => {
 
           {gameState.status === 'playing' && (
             <div className="text-center" style={{ width: '100%' }}>
-              <h3 style={{
-                fontFamily: 'var(--font-serif)',
-                textTransform: 'uppercase',
-                letterSpacing: '2px',
-                fontSize: '0.95rem',
-                color: 'var(--text-vintage-muted)',
-                marginBottom: '1rem',
-                fontWeight: '800'
-              }}>
-                Última Bola Extraída
-              </h3>
-              
-              {currentNumber ? (
-                <div className="animate-pop" style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '185px',
-                  height: '185px',
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%)',
-                  color: 'var(--text-gold-emboss)',
-                  boxShadow: '0 16px 35px rgba(0, 0, 0, 0.75), inset 0 4px 8px rgba(255, 255, 255, 0.4), inset 0 -8px 18px rgba(0, 0, 0, 0.9)',
-                  border: '5px solid var(--gold-primary)',
-                  marginBottom: '1.5rem',
-                  position: 'relative'
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '1.2rem' }}>⚜️</span>
+                <h3 style={{
+                  fontFamily: 'var(--font-serif)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  fontSize: '0.95rem',
+                  color: 'var(--text-vintage-dark)',
+                  fontWeight: '900',
+                  margin: 0
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
-                    {currentLetter && (
-                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: '2.1rem', fontWeight: '900', color: 'var(--gold-highlight)', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                        {currentLetter}
-                      </span>
-                    )}
-                    <span style={{ 
-                      fontFamily: 'var(--font-serif)', 
-                      fontSize: '5.8rem', 
-                      fontWeight: '900', 
-                      textShadow: '0 3px 6px rgba(0,0,0,0.95)' 
-                    }}>
-                      {currentNumber}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ height: '185px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontStyle: 'italic', color: 'var(--text-vintage-muted)' }}>
-                    ¡Listo para comenzar el sorteo de bolas!
-                  </p>
-                </div>
-              )}
+                  Ruleta de Salón Vintage
+                </h3>
+                <span style={{ fontSize: '1.2rem' }}>⚜️</span>
+              </div>
+              
+              {/* Ruleta interactiva de casino con motor de giro, bola animada y revelación central */}
+              <VintageRoulette
+                currentNumber={currentNumber}
+                currentLetter={currentLetter}
+                onSpin={handleManualRouletteSpin}
+                disabled={autoDrawInterval !== null || isRouletteSpinning}
+                remainingCount={maxNumber - called.length}
+                gameMode={gameState.mode}
+              />
 
-              {/* Controles del bolillero */}
+              {/* Controles de velocidad y Sorteo Automático */}
               <div style={{ 
+                marginTop: '1.25rem',
                 background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
-                padding: '1.25rem', 
+                padding: '1rem', 
                 borderRadius: '12px',
                 border: '1.5px solid var(--gold-brass)'
               }}>
-                <button
-                  className="btn-vintage-burgundy"
-                  onClick={drawNumber}
-                  disabled={autoDrawInterval !== null}
-                  style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.2rem' }}
-                >
-                  <Dices size={22} /> Extraer Número Manual
-                </button>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Modo Continuo / Automático
+                </div>
 
                 <div className="flex items-center gap-2">
                   <select
@@ -687,7 +696,7 @@ const HostPanel = () => {
                     }}
                     value={intervalTime}
                     onChange={(e) => setIntervalTime(Number(e.target.value))}
-                    disabled={autoDrawInterval !== null}
+                    disabled={autoDrawInterval !== null || isRouletteSpinning}
                   >
                     <option value={3}>Cada 3 seg</option>
                     <option value={5}>Cada 5 seg</option>
@@ -698,6 +707,7 @@ const HostPanel = () => {
                   <button
                     className={`btn ${autoDrawInterval ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={toggleAutoDraw}
+                    disabled={isRouletteSpinning}
                     style={{ flex: 1.4, padding: '0.65rem 1rem', fontSize: '0.95rem' }}
                   >
                     {autoDrawInterval ? <Square size={16} /> : <Play size={16} />}
