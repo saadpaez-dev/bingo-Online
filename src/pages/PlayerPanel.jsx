@@ -709,16 +709,14 @@ const PlayerPanel = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="btn btn-secondary"
+            className="vintage-brass-plaque"
             style={{
+              margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.75rem',
-              fontSize: '0.85rem',
-              fontFamily: 'var(--font-serif)',
-              fontWeight: 'bold',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              gap: '0.45rem',
+              padding: '0.55rem 1rem',
+              fontSize: '0.95rem'
             }}
             title="Volver al inicio"
           >

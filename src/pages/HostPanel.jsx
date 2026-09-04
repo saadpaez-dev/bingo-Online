@@ -333,20 +333,18 @@ const HostPanel = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button 
             onClick={() => navigate('/')} 
-            className="btn btn-secondary"
+            className="vintage-brass-plaque"
             style={{
+              margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem',
               padding: '0.55rem 1rem',
-              fontSize: '0.9rem',
-              fontFamily: 'var(--font-serif)',
-              fontWeight: 'bold',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              fontSize: '0.95rem'
             }}
             title="Volver a la página principal"
           >
-            <Home size={18} />
+            <Home size={17} />
             <span>Inicio</span>
           </button>
 
@@ -387,17 +385,17 @@ const HostPanel = () => {
             className="vintage-brass-plaque" 
             onClick={() => setShowPlayersModal(true)}
             style={{ 
-              padding: '0.55rem 1.1rem', 
-              fontSize: '1.05rem', 
-              cursor: 'pointer',
-              display: 'flex',
+              margin: 0,
+              padding: '0.55rem 1rem', 
+              fontSize: '0.95rem', 
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.45rem',
               position: 'relative'
             }}
             title="Ver lista de socios y estado de pago"
           >
-            <Users size={18} />
+            <Users size={17} />
             <span>{players.length} Socios</span>
 
             {/* Badge si hay pagos pendientes por aprobar */}
@@ -421,39 +419,32 @@ const HostPanel = () => {
           </button>
 
           <button 
-            className="btn btn-secondary" 
+            className="vintage-brass-plaque" 
             onClick={copyShareLink} 
             style={{ 
-              borderRadius: '8px', 
-              padding: '0.55rem 0.85rem',
+              margin: 0,
+              padding: '0.55rem 1rem',
+              fontSize: '0.95rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              fontSize: '0.85rem',
-              fontFamily: 'var(--font-serif)',
-              fontWeight: 'bold',
-              cursor: 'pointer'
+              gap: '0.45rem'
             }} 
             title="Copiar enlace directo a la sala (sin login)"
           >
-            {copiedLink ? <Check size={17} color="#2E7D32" /> : <Copy size={17} />}
+            {copiedLink ? <Check size={17} color="#1b5e20" /> : <Copy size={17} />}
             <span>{copiedLink ? '¡Copiado!' : 'Copiar Link'}</span>
           </button>
 
           <button 
-            className="btn btn-secondary" 
+            className="vintage-brass-plaque" 
             onClick={shareWhatsApp} 
             style={{ 
-              borderRadius: '8px', 
-              padding: '0.55rem 0.85rem',
+              margin: 0,
+              padding: '0.55rem 1rem',
+              fontSize: '0.95rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              fontSize: '0.85rem',
-              fontFamily: 'var(--font-serif)',
-              fontWeight: 'bold',
-              color: '#128C7E',
-              cursor: 'pointer'
+              gap: '0.45rem'
             }} 
             title="Compartir invitación por WhatsApp"
           >

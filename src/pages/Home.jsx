@@ -707,8 +707,8 @@ const Home = () => {
                           <button
                             type="button"
                             onClick={() => navigate(`/play/${room.id}?role=spectator`)}
-                            className="btn btn-secondary"
-                            style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            className="vintage-brass-plaque"
+                            style={{ margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
                             title="Entrar solo a observar en vivo"
                           >
                             <Eye size={13} /> Observar
