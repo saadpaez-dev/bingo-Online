@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye, Home } from 'lucide-react';
+import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye, Home, Copy, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
@@ -18,6 +18,7 @@ const HostPanel = () => {
   const [activeReactions, setActiveReactions] = useState([]);
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const { playSound } = useSettings();
 
   const roundEndingRef = useRef(false);
@@ -252,10 +253,40 @@ const HostPanel = () => {
     };
   }, [autoDrawInterval]);
 
+  const getShareUrl = () => {
+    // Si estamos en cualquier URL de Vercel (especialmente vistas previas de equipo con hash que exigen login),
+    // forzamos el dominio oficial de producción público (bingo-online-six.vercel.app)
+    // para que ningún jugador tenga que iniciar sesión en Vercel.
+    if (window.location.hostname.includes('vercel.app')) {
+      return `https://bingo-online-six.vercel.app/play/${gameId}`;
+    }
+    return `${window.location.origin}/play/${gameId}`;
+  };
+
   const shareWhatsApp = () => {
-    const url = `${window.location.origin}/play/${gameId}`;
+    const url = getShareUrl();
     const text = `¡Únete a mi partida de Bingo Familiar! Código de sala: ${gameId}. Ingresa aquí: ${url}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const copyShareLink = async () => {
+    const url = getShareUrl();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch (err) {
+      console.error('Error al copiar enlace:', err);
+    }
   };
 
   if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
@@ -386,8 +417,45 @@ const HostPanel = () => {
             )}
           </button>
 
-          <button className="btn btn-secondary" onClick={shareWhatsApp} style={{ borderRadius: '50%', padding: '0.65rem' }} title="Compartir invitación por WhatsApp">
-            <Share2 size={18} />
+          <button 
+            className="btn btn-secondary" 
+            onClick={copyShareLink} 
+            style={{ 
+              borderRadius: '8px', 
+              padding: '0.55rem 0.85rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.85rem',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }} 
+            title="Copiar enlace directo a la sala (sin login)"
+          >
+            {copiedLink ? <Check size={17} color="#2E7D32" /> : <Copy size={17} />}
+            <span>{copiedLink ? '¡Copiado!' : 'Copiar Link'}</span>
+          </button>
+
+          <button 
+            className="btn btn-secondary" 
+            onClick={shareWhatsApp} 
+            style={{ 
+              borderRadius: '8px', 
+              padding: '0.55rem 0.85rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.85rem',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 'bold',
+              color: '#128C7E',
+              cursor: 'pointer'
+            }} 
+            title="Compartir invitación por WhatsApp"
+          >
+            <Share2 size={17} />
+            <span className="mobile-hidden">WhatsApp</span>
           </button>
         </div>
       </div>
