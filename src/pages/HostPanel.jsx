@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
+import bgTable from '../assets/bg-table.jpg';
 
 const HostPanel = () => {
   const { gameId } = useParams();
@@ -292,7 +293,24 @@ const HostPanel = () => {
     }
   };
 
-  if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
+  if (!gameState) {
+    return (
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.45) 0%, rgba(10, 4, 2, 0.8) 100%), url(${bgTable})`,
+          justifyContent: 'center'
+        }}
+      >
+        <div className="card text-center animate-pop" style={{ maxWidth: '350px', padding: '2rem' }}>
+          <span style={{ fontSize: '2.5rem' }}>🎲</span>
+          <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', marginTop: '0.75rem', color: 'var(--burgundy-primary)' }}>
+            Cargando Mesa del Anfitrión...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const maxNumber = gameState.mode === 75 ? 75 : 90;
   const called = gameState.calledNumbers || [];
@@ -318,7 +336,13 @@ const HostPanel = () => {
   const pendingPaymentsCount = players.filter(p => p.role !== 'spectator' && p.paymentStatus === 'pending_approval').length;
 
   return (
-    <div className="app-container" style={{ maxWidth: '1440px', position: 'relative', width: '100%' }}>
+    <div 
+      className="dealer-page-wrapper"
+      style={{
+        backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+      }}
+    >
+      <div className="app-container" style={{ maxWidth: '1440px', position: 'relative', width: '100%' }}>
       
       {/* Comentarios en vivo estilo Streamer a un lado */}
       <LiveCommentsOverlay gameId={gameId} />
@@ -1148,6 +1172,7 @@ const HostPanel = () => {
           isHost: true
         }}
       />
+      </div>
     </div>
   );
 };
