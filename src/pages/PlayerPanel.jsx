@@ -86,6 +86,7 @@ const PlayerPanel = () => {
           setName(pData.name || '');
           setPlayerData(pData);
           setHasJoined(true);
+          localStorage.setItem('bingo_player_active_game', gameId);
         }
       } catch (err) {
         console.error("Error auto-reconectando jugador:", err);
@@ -175,6 +176,7 @@ const PlayerPanel = () => {
       paymentStatus: initialPaymentStatus
     });
     
+    localStorage.setItem('bingo_player_active_game', gameId);
     setHasJoined(true);
   };
 

@@ -65,8 +65,9 @@ const Home = () => {
   const [cardPrice, setCardPrice] = useState('$5.000 COP');
   const [prizeType, setPrizeType] = useState('chips'); // 'chips' | 'cash'
 
-  // Sala activa del Anfitrión (Reconexión rápida) y Salas Públicas en vivo
+  // Sala activa del Anfitrión (Reconexión rápida), Partida de Jugador y Salas Públicas en vivo
   const [activeHostGame, setActiveHostGame] = useState(null);
+  const [activePlayerGame, setActivePlayerGame] = useState(null);
   const [activeRooms, setActiveRooms] = useState([]);
 
   const navigate = useNavigate();
@@ -96,6 +97,37 @@ const Home = () => {
 
     return () => unsub();
   }, []);
+
+  // 1.1 Escuchar la partida activa de Jugador si existe en localStorage
+  useEffect(() => {
+    const savedPlayerGameId = localStorage.getItem('bingo_player_active_game');
+    const savedHostGameId = localStorage.getItem('bingo_dealer_active_game');
+
+    // Si ya somos el anfitrión de esta misma sala, no mostramos el banner duplicado
+    if (!savedPlayerGameId || savedPlayerGameId === savedHostGameId) {
+      setActivePlayerGame(null);
+      return;
+    }
+
+    const unsub = onSnapshot(doc(db, 'games', savedPlayerGameId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.status !== 'archived') {
+          setActivePlayerGame({ id: savedPlayerGameId, ...data });
+        } else {
+          setActivePlayerGame(null);
+          localStorage.removeItem('bingo_player_active_game');
+        }
+      } else {
+        setActivePlayerGame(null);
+        localStorage.removeItem('bingo_player_active_game');
+      }
+    }, (err) => {
+      console.warn('Error verificando partida de jugador:', err);
+    });
+
+    return () => unsub();
+  }, [activeHostGame]);
 
   // 2. Escuchar salas abiertas en vivo en Firestore
   useEffect(() => {
@@ -258,6 +290,73 @@ const Home = () => {
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-vintage-muted)', padding: '0.2rem 0.4rem', fontSize: '1.1rem' }}
                 title="Descartar aviso de sala"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* AVISO DESTACADO DE REANUDAR PARTIDA SI EL JUGADOR SALIÓ AL INICIO */}
+        {activePlayerGame && !activeHostGame && (
+          <div className="animate-pop" style={{
+            background: 'linear-gradient(180deg, #F0FDF4 0%, #DCFCE7 100%)',
+            border: '2px solid #2E7D32',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            gap: '0.65rem',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle at 35% 30%, #2E7D32 0%, #14532D 100%)',
+                border: '2px solid var(--gold-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              }}>
+                🎟️
+              </div>
+              <div>
+                <div style={{ fontSize: '0.72rem', color: '#166534', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  Tu Cartón / Partida en Curso
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: '900', color: '#14532D', lineHeight: 1.1 }}>
+                  Sala {activePlayerGame.id}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 'bold' }}>
+                  ● {activePlayerGame.status === 'playing' ? `En Juego (Ronda ${activePlayerGame.currentRound || 1})` : 'Mesa en Espera'}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => navigate(`/play/${activePlayerGame.id}`)}
+                className="btn-vintage-burgundy"
+                style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', backgroundColor: '#15803D' }}
+              >
+                <Play size={14} /> Volver a mi Cartón
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('bingo_player_active_game');
+                  setActivePlayerGame(null);
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#166534', padding: '0.2rem 0.4rem', fontSize: '1.1rem' }}
+                title="Descartar aviso"
               >
                 ✕
               </button>
