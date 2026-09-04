@@ -12,6 +12,8 @@ import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
+import VintageRoulette from '../components/VintageRoulette';
+import bgTable from '../assets/bg-table.jpg';
 
 const FiligreeCorner = ({ position }) => (
   <svg 
@@ -322,8 +324,14 @@ const PlayerPanel = () => {
   // =========================================================================
   if (!hasJoined) {
     return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
-        <div className="vintage-parchment-card animate-pop" style={{ maxWidth: '460px', padding: '2.5rem 2rem' }}>
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+        }}
+      >
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
+          <div className="vintage-parchment-card animate-pop" style={{ maxWidth: '460px', padding: '2.5rem 2rem' }}>
           
           <FiligreeCorner position="top-left" />
           <FiligreeCorner position="top-right" />
@@ -536,6 +544,7 @@ const PlayerPanel = () => {
           </form>
         </div>
       </div>
+    </div>
     );
   }
 
@@ -549,7 +558,13 @@ const PlayerPanel = () => {
 
   if (!isApproved) {
     return (
-      <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+        }}
+      >
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
         
         {/* Comentarios en vivo para hablar con el anfitrión mientras espera */}
         <LiveCommentsOverlay gameId={gameId} />
@@ -655,12 +670,14 @@ const PlayerPanel = () => {
           }}
         />
       </div>
+    </div>
     );
   }
 
   // =========================================================================
   // ESTADO 3: ¡MESA DE JUEGO Y CARTÓN HABILITADO AL 100%!
   // =========================================================================
+  const maxNumber = gameState.mode === 75 ? 75 : 90;
   const called = gameState.calledNumbers || [];
   const currentNumber = called.length > 0 ? called[called.length - 1] : null;
   const targetWins = gameState.targetWins || 3;
@@ -695,7 +712,13 @@ const PlayerPanel = () => {
   };
 
   return (
-    <div className="app-container animate-pop" style={{ position: 'relative', maxWidth: '1240px' }}>
+    <div 
+      className="dealer-page-wrapper"
+      style={{
+        backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+      }}
+    >
+      <div className="app-container animate-pop" style={{ position: 'relative', maxWidth: '1440px', width: '100%' }}>
       
       {/* Comentarios y Reacciones en vivo estilo Streamer */}
       <LiveCommentsOverlay gameId={gameId} />
@@ -1124,73 +1147,62 @@ const PlayerPanel = () => {
         {/* COLUMNA DERECHA: ESTADO DE LA MESA, SORTEO Y CARRERA AL BINGO EN VIVO */}
         <div className="player-side-col">
           
-          {/* Módulo 1: Sorteo de Bola o Estado de Espera */}
+          {/* Módulo 1: Ruleta Vintage de Salón y Lente de Zoom Sincronizada */}
           {gameState.status === 'playing' && (
             <div className="card text-center animate-pop" style={{
-              padding: '1.5rem 1rem',
+              padding: '1.25rem 1rem',
               border: '3px solid var(--burgundy-primary)'
             }}>
-              <h3 style={{
-                fontFamily: 'var(--font-serif)',
-                textTransform: 'uppercase',
-                letterSpacing: '2px',
-                fontSize: '0.92rem',
-                color: 'var(--text-vintage-muted)',
-                marginBottom: '0.85rem',
-                fontWeight: '800'
-              }}>
-                Última Bola Sorteada
-              </h3>
-              
-              <div key={currentNumber} className="animate-pop" style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '135px',
-                height: '135px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%)',
-                color: 'var(--text-gold-emboss)',
-                boxShadow: '0 12px 25px rgba(0, 0, 0, 0.6), inset 0 3px 6px rgba(255, 255, 255, 0.35), inset 0 -6px 14px rgba(0, 0, 0, 0.85)',
-                border: '4px solid var(--gold-primary)',
-                marginBottom: '1rem',
-                position: 'relative'
-              }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
-                  {currentLetter && (
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: '900', color: 'var(--gold-highlight)', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                      {currentLetter}
-                    </span>
-                  )}
-                  <span style={{ 
-                    fontFamily: 'var(--font-serif)', 
-                    fontSize: '4.2rem', 
-                    fontWeight: '900', 
-                    textShadow: '0 2px 4px rgba(0,0,0,0.95)' 
-                  }}>
-                    {currentNumber}
-                  </span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', marginBottom: '0.65rem' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚜️</span>
+                <h3 style={{
+                  fontFamily: 'var(--font-serif)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  fontSize: '0.92rem',
+                  color: 'var(--text-vintage-dark)',
+                  fontWeight: '900',
+                  margin: 0
+                }}>
+                  Ruleta de Salón Vintage
+                </h3>
+                <span style={{ fontSize: '1.1rem' }}>⚜️</span>
               </div>
+              
+              {/* Ruleta interactiva sincronizada con el anfitrión */}
+              <VintageRoulette
+                currentNumber={currentNumber}
+                currentLetter={currentLetter}
+                remainingCount={maxNumber - called.length}
+                gameMode={gameState.mode}
+                readOnly={true}
+              />
 
               {/* Historial de bolas previas como fichas de madera */}
-              <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
-                {called.slice(-6, -1).reverse().map((num, i) => (
-                  <div key={`${num}-${i}`} className="animate-pop" style={{
-                    padding: '0.35rem 0.85rem',
-                    background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
-                    border: '1.5px solid var(--gold-brass)',
-                    borderRadius: '999px',
-                    fontFamily: 'var(--font-serif)',
-                    fontWeight: '800',
-                    color: 'var(--text-vintage-dark)',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
-                    fontSize: '0.9rem'
-                  }}>
-                    {num}
+              {called.length > 1 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-serif)', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 'bold' }}>
+                    Últimas Bolas Extraídas
                   </div>
-                ))}
-              </div>
+                  <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
+                    {called.slice(-6, -1).reverse().map((num, i) => (
+                      <div key={`${num}-${i}`} className="animate-pop" style={{
+                        padding: '0.35rem 0.85rem',
+                        background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                        border: '1.5px solid var(--gold-brass)',
+                        borderRadius: '999px',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '800',
+                        color: 'var(--text-vintage-dark)',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+                        fontSize: '0.9rem'
+                      }}>
+                        {num}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1386,6 +1398,7 @@ const PlayerPanel = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

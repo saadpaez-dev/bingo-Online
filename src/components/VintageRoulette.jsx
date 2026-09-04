@@ -47,7 +47,8 @@ const VintageRoulette = ({
   remainingCount,
   gameMode = 75,
   spinDuration = 3,
-  onDurationChange
+  onDurationChange,
+  readOnly = false
 }) => {
   const pockets = useMemo(() => generatePockets(gameMode), [gameMode]);
   const totalSlices = pockets.length;
@@ -62,6 +63,7 @@ const VintageRoulette = ({
   const audioCtxRef = useRef(null);
   const animFrameRef = useRef(null);
   const lastClickTimeRef = useRef(0);
+  const prevNumberRef = useRef(null);
 
   // Inicializar Web Audio context para clics mecánicos procedurales
   const getAudioContext = () => {
@@ -72,7 +74,7 @@ const VintageRoulette = ({
       }
     }
     if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
+      audioCtxRef.current.resume().catch(() => {});
     }
     return audioCtxRef.current;
   };
@@ -117,37 +119,17 @@ const VintageRoulette = ({
     } catch (e) {}
   };
 
-  // Posicionar la aguja exactamente sobre el número inicial si existe
-  useEffect(() => {
-    if (!isAnimating && currentNumber) {
-      const idx = pockets.indexOf(currentNumber);
-      if (idx !== -1) {
-        const exactAngle = - (idx * sliceDeg + sliceDeg / 2);
-        setRotation(exactAngle);
-      }
-      setRevealedBall({ number: currentNumber, letter: currentLetter });
+  // Función reutilizable para ejecutar la física y sonido de giro
+  const triggerSpinAnimation = (nextNum) => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
     }
-  }, [currentNumber, currentLetter, isAnimating, pockets, sliceDeg]);
-
-  // Manejar el giro de ruleta matemáticamente alineado al número elegido
-  const handleTriggerSpin = async () => {
-    if (disabled || isSpinning || isAnimating) return;
-
     setIsAnimating(true);
     setRevealedBall(null);
-
-    // Obtener el número sorteado desde el Host
-    const nextNum = await onSpin();
-    if (!nextNum) {
-      setIsAnimating(false);
-      return;
-    }
 
     const letLetter = getBallLetter(nextNum, gameMode);
     const targetIndex = pockets.indexOf(nextNum);
 
-    // Cálculo matemático exacto para que la aguja a las 12 en punto (-90deg)
-    // apunte exactamente al centro de la casilla targetIndex
     const desiredMod = ((- (targetIndex * sliceDeg + sliceDeg / 2)) % 360 + 360) % 360;
     const currentMod = ((rotation % 360) + 360) % 360;
     let diff = desiredMod - currentMod;
@@ -185,15 +167,13 @@ const VintageRoulette = ({
       if (progress < 1) {
         animFrameRef.current = requestAnimationFrame(animate);
       } else {
-        // Al terminar, fijamos la rotación exacta matemática
         setRotation(targetRot);
         setIsAnimating(false);
         playChimeSound();
         setRevealedBall({ number: nextNum, letter: letLetter });
 
-        // Confeti festivo
         confetti({
-          particleCount: 50,
+          particleCount: 40,
           spread: 60,
           origin: { y: 0.65 },
           colors: ['#D4AF37', '#80141D', '#F4E7CB', '#166534']
@@ -202,6 +182,62 @@ const VintageRoulette = ({
     };
 
     animFrameRef.current = requestAnimationFrame(animate);
+  };
+
+  // Posicionar o girar automáticamente cuando cambia currentNumber
+  useEffect(() => {
+    if (!currentNumber) {
+      setRevealedBall(null);
+      prevNumberRef.current = null;
+      return;
+    }
+
+    // Primera carga o reconexión: colocación directa
+    if (prevNumberRef.current === null) {
+      prevNumberRef.current = currentNumber;
+      const idx = pockets.indexOf(currentNumber);
+      if (idx !== -1) {
+        const exactAngle = - (idx * sliceDeg + sliceDeg / 2);
+        setRotation(exactAngle);
+      }
+      setRevealedBall({ number: currentNumber, letter: currentLetter });
+      return;
+    }
+
+    // Modo Jugador / Observador (readOnly): Si llega una nueva bola del Dealer, girar con animación
+    if (readOnly && prevNumberRef.current !== currentNumber) {
+      prevNumberRef.current = currentNumber;
+      triggerSpinAnimation(currentNumber);
+      return;
+    }
+
+    // Si ya terminó de animar o no está en readOnly
+    if (!isAnimating) {
+      prevNumberRef.current = currentNumber;
+      const idx = pockets.indexOf(currentNumber);
+      if (idx !== -1) {
+        const exactAngle = - (idx * sliceDeg + sliceDeg / 2);
+        setRotation(exactAngle);
+      }
+      setRevealedBall({ number: currentNumber, letter: currentLetter });
+    }
+  }, [currentNumber, currentLetter, readOnly, isAnimating, pockets, sliceDeg]);
+
+  // Manejar el giro de ruleta manual (Host)
+  const handleTriggerSpin = async () => {
+    if (readOnly || disabled || isSpinning || isAnimating) return;
+
+    setIsAnimating(true);
+    setRevealedBall(null);
+
+    // Obtener el número sorteado desde el Host
+    const nextNum = await onSpin();
+    if (!nextNum) {
+      setIsAnimating(false);
+      return;
+    }
+
+    triggerSpinAnimation(nextNum);
   };
 
   useEffect(() => {
@@ -241,11 +277,11 @@ const VintageRoulette = ({
             width: '240px',
             height: '240px',
             maxWidth: '100%',
-            cursor: disabled || isAnimating ? 'default' : 'pointer',
+            cursor: readOnly || disabled || isAnimating ? 'default' : 'pointer',
             userSelect: 'none',
             filter: 'drop-shadow(0 12px 20px rgba(0, 0, 0, 0.65))'
           }}
-          title={disabled || isAnimating ? '' : '¡Haz clic para girar la ruleta!'}
+          title={readOnly ? 'Ruleta del Salón' : disabled || isAnimating ? '' : '¡Haz clic para girar la ruleta!'}
         >
           <svg 
             viewBox="0 0 400 400" 
@@ -629,73 +665,101 @@ const VintageRoulette = ({
 
       </div>
 
-      {/* SELECTOR VINTAGE DE DURACIÓN DEL GIRO */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        gap: '0.45rem', 
-        marginBottom: '0.65rem',
-        background: '#FAF4E5',
-        border: '1.5px solid var(--gold-brass)',
-        borderRadius: '8px',
-        padding: '0.35rem 0.75rem',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-      }}>
-        <Clock size={15} color="#8C6B23" />
-        <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-serif)', fontWeight: 'bold', color: 'var(--text-vintage-dark)' }}>
-          Duración del Giro:
-        </span>
-        <select
-          value={spinDuration}
-          onChange={(e) => onDurationChange && onDurationChange(Number(e.target.value))}
-          disabled={disabled || isAnimating}
-          style={{
-            background: '#fff',
+      {!readOnly ? (
+        <>
+          {/* SELECTOR VINTAGE DE DURACIÓN DEL GIRO */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '0.45rem', 
+            marginBottom: '0.65rem',
+            background: '#FAF4E5',
             border: '1.5px solid var(--gold-brass)',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            fontFamily: 'var(--font-serif)',
-            fontWeight: 'bold',
-            padding: '0.2rem 0.5rem',
-            cursor: disabled || isAnimating ? 'not-allowed' : 'pointer',
-            color: 'var(--burgundy-primary)'
-          }}
-        >
-          <option value={1.5}>Rápido (1.5 seg)</option>
-          <option value={2}>Ágil (2 seg)</option>
-          <option value={3}>Estándar (3 seg)</option>
-          <option value={4}>Suspenso (4 seg)</option>
-          <option value={5}>Dramático (5 seg)</option>
-          <option value={7}>Casino Real (7 seg)</option>
-        </select>
-      </div>
+            borderRadius: '8px',
+            padding: '0.35rem 0.75rem',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+          }}>
+            <Clock size={15} color="#8C6B23" />
+            <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-serif)', fontWeight: 'bold', color: 'var(--text-vintage-dark)' }}>
+              Duración del Giro:
+            </span>
+            <select
+              value={spinDuration}
+              onChange={(e) => onDurationChange && onDurationChange(Number(e.target.value))}
+              disabled={disabled || isAnimating}
+              style={{
+                background: '#fff',
+                border: '1.5px solid var(--gold-brass)',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: 'bold',
+                padding: '0.2rem 0.5rem',
+                cursor: disabled || isAnimating ? 'not-allowed' : 'pointer',
+                color: 'var(--burgundy-primary)'
+              }}
+            >
+              <option value={1.5}>Rápido (1.5 seg)</option>
+              <option value={2}>Ágil (2 seg)</option>
+              <option value={3}>Estándar (3 seg)</option>
+              <option value={4}>Suspenso (4 seg)</option>
+              <option value={5}>Dramático (5 seg)</option>
+              <option value={7}>Casino Real (7 seg)</option>
+            </select>
+          </div>
 
-      {/* BOTÓN 3D DE GIRO DE RULETA */}
-      <button
-        onClick={handleTriggerSpin}
-        disabled={disabled || isAnimating}
-        className="btn-vintage-burgundy animate-pop"
-        style={{
-          width: '100%',
-          maxWidth: '360px',
-          fontSize: '1.25rem',
-          padding: '0.85rem 1.5rem',
-          display: 'inline-flex',
-          alignItems: 'center',
+          {/* BOTÓN 3D DE GIRO DE RULETA */}
+          <button
+            onClick={handleTriggerSpin}
+            disabled={disabled || isAnimating}
+            className="btn-vintage-burgundy animate-pop"
+            style={{
+              width: '100%',
+              maxWidth: '360px',
+              fontSize: '1.25rem',
+              padding: '0.85rem 1.5rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.6rem',
+              opacity: disabled || isAnimating ? 0.75 : 1,
+              cursor: disabled || isAnimating ? 'not-allowed' : 'pointer'
+            }}
+            title="Extraer el siguiente número girando la ruleta vintage"
+          >
+            <span style={{ fontSize: '1.4rem' }}>🎰</span>
+            <span>{isAnimating ? 'Girando Ruleta...' : 'Girar Ruleta Manual'}</span>
+          </button>
+        </>
+      ) : (
+        /* ETIQUETA ELEGANTE PARA EL PANEL DEL JUGADOR / OBSERVADOR */
+        <div style={{ 
+          margin: '0.2rem 0 0.4rem', 
+          display: 'flex', 
+          alignItems: 'center', 
           justifyContent: 'center',
-          gap: '0.6rem',
-          opacity: disabled || isAnimating ? 0.75 : 1,
-          cursor: disabled || isAnimating ? 'not-allowed' : 'pointer'
-        }}
-        title="Extraer el siguiente número girando la ruleta vintage"
-      >
-        <span style={{ fontSize: '1.4rem' }}>🎰</span>
-        <span>{isAnimating ? 'Girando Ruleta...' : 'Girar Ruleta Manual'}</span>
-      </button>
+          gap: '0.45rem',
+          background: isAnimating ? '#FDF2E9' : '#FAF4E5',
+          border: '1.5px solid var(--gold-brass)',
+          borderRadius: '8px',
+          padding: '0.4rem 0.85rem',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <span style={{ fontSize: '1rem' }}>{isAnimating ? '🎲' : '⚜️'}</span>
+          <span style={{ 
+            fontSize: '0.85rem', 
+            fontFamily: 'var(--font-serif)', 
+            fontWeight: 'bold', 
+            color: isAnimating ? '#B71C1C' : 'var(--burgundy-primary)' 
+          }}>
+            {isAnimating ? '¡El anfitrión está extrayendo balota!' : 'Ruleta en sincronía con la mesa'}
+          </span>
+        </div>
+      )}
 
       {/* Indicador sutil de bolas restantes */}
-      <div style={{ marginTop: '0.55rem', fontSize: '0.82rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+      <div style={{ marginTop: '0.45rem', fontSize: '0.82rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
         {remainingCount !== undefined ? `${remainingCount} bolas disponibles en la tolva` : ''}
       </div>
 
