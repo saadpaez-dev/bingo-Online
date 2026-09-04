@@ -591,3 +591,54 @@ body::before {
 .mt-4 { margin-top: 1rem; }
 .mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
+
+/* =========================================================
+   DISTRIBUCIÓN RESPONSIVA PARA COMPUTADOR / PANTALLA ANCHA
+   ========================================================= */
+.player-game-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.player-card-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.player-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .player-game-grid {
+    display: grid;
+    grid-template-columns: minmax(460px, 540px) 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .player-card-col {
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+

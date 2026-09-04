@@ -8,6 +8,7 @@ import BingoCard90 from '../components/BingoCard90';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceModal from '../components/BingoRaceModal';
+import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
@@ -612,7 +613,7 @@ const PlayerPanel = () => {
   };
 
   return (
-    <div className="app-container animate-pop" style={{ position: 'relative' }}>
+    <div className="app-container animate-pop" style={{ position: 'relative', maxWidth: '1240px' }}>
       
       {/* Comentarios y Reacciones en vivo estilo Streamer */}
       <LiveCommentsOverlay gameId={gameId} />
@@ -711,373 +712,453 @@ const PlayerPanel = () => {
         </div>
       </div>
 
-      {/* ÁREA DE ÚLTIMA BOLA (BOLA 3D DE MADERA TALLADA) */}
-      {gameState.status === 'playing' && (
-        <div className="card text-center" style={{
-          padding: '1.75rem 1rem',
-          border: '3px solid var(--burgundy-primary)'
-        }}>
-          <h3 style={{
-            fontFamily: 'var(--font-serif)',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            fontSize: '0.95rem',
-            color: 'var(--text-vintage-muted)',
-            marginBottom: '1rem',
-            fontWeight: '800'
-          }}>
-            Última Bola Sorteada
-          </h3>
-          
-          <div key={currentNumber} className="animate-pop" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '135px',
-            height: '135px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%)',
-            color: 'var(--text-gold-emboss)',
-            boxShadow: '0 12px 25px rgba(0, 0, 0, 0.6), inset 0 3px 6px rgba(255, 255, 255, 0.35), inset 0 -6px 14px rgba(0, 0, 0, 0.85)',
-            border: '4px solid var(--gold-primary)',
-            marginBottom: '1.25rem',
-            position: 'relative'
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
-              {currentLetter && (
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: '900', color: 'var(--gold-highlight)', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                  {currentLetter}
-                </span>
-              )}
-              <span style={{ 
-                fontFamily: 'var(--font-serif)', 
-                fontSize: '4.2rem', 
-                fontWeight: '900', 
-                textShadow: '0 2px 4px rgba(0,0,0,0.95)' 
-              }}>
-                {currentNumber}
-              </span>
-            </div>
-          </div>
-
-          {/* Historial de bolas previas como fichas de madera */}
-          <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
-            {called.slice(-6, -1).reverse().map((num, i) => (
-              <div key={`${num}-${i}`} className="animate-pop" style={{
-                padding: '0.35rem 0.85rem',
-                background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
-                border: '1.5px solid var(--gold-brass)',
-                borderRadius: '999px',
-                fontFamily: 'var(--font-serif)',
-                fontWeight: '800',
-                color: 'var(--text-vintage-dark)',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
-                fontSize: '0.9rem'
-              }}>
-                {num}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* =========================================================
-         CARTÓN DE BINGO O LOBBY DE OBSERVADOR
+         LAYOUT DE JUEGO RESPONSIVO: COMPUTADOR (2 COLUMNAS) / MÓVIL (1 COLUMNA)
          ========================================================= */}
-      <div style={{ margin: '0 auto', width: '100%' }}>
-        {isSpectator ? (
-          playingPlayers.length === 0 ? (
-            <div className="vintage-parchment-card text-center animate-pop" style={{
-              padding: '2rem 1.5rem',
-              margin: '0.5rem auto',
-              maxWidth: '520px',
-              border: '2px dashed var(--gold-brass)',
-              background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)'
-            }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                margin: '0 auto 0.75rem',
-                background: '#FEF3C7',
-                color: '#92400E',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Eye size={30} />
-              </div>
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-vintage-dark)', margin: '0 0 0.4rem' }}>
-                Modo Observador en Vivo
-              </h3>
-              <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '400px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
-                Esperando que los jugadores conecten sus cartones a la mesa para comenzar a inspeccionar la partida.
-              </p>
-              {gameState.paymentMode && (
-                <button 
-                  className="btn-vintage-burgundy"
-                  onClick={upgradeToPlayer}
-                  style={{
-                    display: 'inline-flex',
+      <div className="player-game-grid">
+        
+        {/* COLUMNA IZQUIERDA: TAPETE DE JUEGO (CARTÓN Y ACCIONES) */}
+        <div className="player-card-col">
+          
+          {/* CARTÓN DE BINGO O LOBBY DE OBSERVADOR */}
+          <div style={{ margin: '0 auto', width: '100%' }}>
+            {isSpectator ? (
+              playingPlayers.length === 0 ? (
+                <div className="vintage-parchment-card text-center animate-pop" style={{
+                  padding: '2rem 1.5rem',
+                  margin: '0.5rem auto',
+                  maxWidth: '520px',
+                  border: '2px dashed var(--gold-brass)',
+                  background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)'
+                }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    margin: '0 auto 0.75rem',
+                    background: '#FEF3C7',
+                    color: '#92400E',
+                    display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.85rem 1.6rem',
-                    fontSize: '1.05rem',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                  }}
-                >
-                  <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
-                </button>
-              )}
-            </div>
-          ) : (
-            <div style={{ maxWidth: '540px', margin: '0 auto' }}>
-              
-              {/* Barra de Selección de Cartones de Jugadores */}
-              <div style={{ marginBottom: '0.75rem' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '0.4rem',
-                  padding: '0 0.25rem'
-                }}>
-                  <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-vintage-muted)' }}>
-                    👁️ SELECCIONA EL CARTÓN A INSPECCIONAR:
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
-                    {playingPlayers.length} Jugadores
-                  </span>
+                    justifyContent: 'center'
+                  }}>
+                    <Eye size={30} />
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-vintage-dark)', margin: '0 0 0.4rem' }}>
+                    Modo Observador en Vivo
+                  </h3>
+                  <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '400px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
+                    Esperando que los jugadores conecten sus cartones a la mesa para comenzar a inspeccionar la partida.
+                  </p>
+                  {gameState.paymentMode && (
+                    <button 
+                      className="btn-vintage-burgundy"
+                      onClick={upgradeToPlayer}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.85rem 1.6rem',
+                        fontSize: '1.05rem',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                      }}
+                    >
+                      <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
+                    </button>
+                  )}
                 </div>
-
-                {/* Chips de Jugadores */}
-                <div style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  overflowX: 'auto',
-                  padding: '0.35rem 0.2rem',
-                  scrollbarWidth: 'thin'
-                }}>
-                  {playingPlayers.map(p => {
-                    const isSelected = p.id === observedPlayer?.id;
-                    const pProg = calculateCardProgress(p.card, gameState.mode, called);
-
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelectedObservedPlayerId(p.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.45rem',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '999px',
-                          background: isSelected 
-                            ? 'linear-gradient(180deg, #7E252D 0%, #3F1015 100%)' 
-                            : 'linear-gradient(180deg, #FFFDF9 0%, #FAF4E5 100%)',
-                          color: isSelected ? '#FAF4E5' : 'var(--text-vintage-dark)',
-                          border: isSelected ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
-                          cursor: 'pointer',
-                          boxShadow: isSelected ? '0 4px 10px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
-                          flexShrink: 0,
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        <div style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.85rem'
-                        }}>
-                          {p.isCustomAvatar ? (
-                            <img src={p.avatar} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            p.avatar || '👤'
-                          )}
-                        </div>
-
-                        <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                          {p.name}
-                        </span>
-
-                        <span style={{
-                          backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : '#E6D2AE',
-                          color: isSelected ? '#FFF' : '#3A1015',
-                          fontSize: '0.7rem',
-                          padding: '1px 5px',
-                          borderRadius: '999px',
-                          fontWeight: '900'
-                        }}>
-                          {pProg.percentage}%
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Cabecera del Cartón Seleccionado con Navegación Anterior / Siguiente */}
-              {observedPlayer && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
-                  borderRadius: '10px',
-                  border: '2px solid var(--gold-brass)',
-                  padding: '0.55rem 0.85rem',
-                  marginBottom: '0.75rem',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                }}>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={handlePrevObserved}
-                    disabled={playingPlayers.length <= 1}
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                    title="Ver cartón anterior"
-                  >
-                    <ChevronLeft size={16} /> Ant.
-                  </button>
-
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
-                      <Eye size={16} color="#7E252D" />
-                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1rem', color: '#3A1015' }}>
-                        Cartón de {observedPlayer.name}
+              ) : (
+                <div style={{ width: '100%', maxWidth: '540px', margin: '0 auto' }}>
+                  
+                  {/* Barra de Selección de Cartones de Jugadores */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.4rem',
+                      padding: '0 0.25rem'
+                    }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-vintage-muted)' }}>
+                        👁️ SELECCIONA EL CARTÓN A INSPECCIONAR:
                       </span>
-                      {observedProgress?.missing === 1 ? (
-                        <span style={{ backgroundColor: '#B71C1C', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', animation: 'pulse 1s infinite' }}>
-                          🔥 ¡A 1 BOLA!
-                        </span>
-                      ) : observedProgress?.missing === 2 ? (
-                        <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', border: '1px solid #F59E0B' }}>
-                          🤞 ¡A 2 BOLAS!
-                        </span>
-                      ) : (
-                        <span style={{ backgroundColor: '#7E252D', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold' }}>
-                          {observedProgress?.percentage}%
-                        </span>
-                      )}
+                      <span style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
+                        {playingPlayers.length} Jugadores
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '1px' }}>
-                      {observedProgress?.matched} de {observedProgress?.total} bolas acertadas en vivo (Faltan {observedProgress?.missing})
+
+                    {/* Chips de Jugadores */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      overflowX: 'auto',
+                      padding: '0.35rem 0.2rem',
+                      scrollbarWidth: 'thin'
+                    }}>
+                      {playingPlayers.map(p => {
+                        const isSelected = p.id === observedPlayer?.id;
+                        const pProg = calculateCardProgress(p.card, gameState.mode, called);
+
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setSelectedObservedPlayerId(p.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '999px',
+                              background: isSelected 
+                                ? 'linear-gradient(180deg, #7E252D 0%, #3F1015 100%)' 
+                                : 'linear-gradient(180deg, #FFFDF9 0%, #FAF4E5 100%)',
+                              color: isSelected ? '#FAF4E5' : 'var(--text-vintage-dark)',
+                              border: isSelected ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
+                              cursor: 'pointer',
+                              boxShadow: isSelected ? '0 4px 10px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                              flexShrink: 0,
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              overflow: 'hidden',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.85rem'
+                            }}>
+                              {p.isCustomAvatar ? (
+                                <img src={p.avatar} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                p.avatar || '👤'
+                              )}
+                            </div>
+
+                            <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                              {p.name}
+                            </span>
+
+                            <span style={{
+                              backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : '#E6D2AE',
+                              color: isSelected ? '#FFF' : '#3A1015',
+                              fontSize: '0.7rem',
+                              padding: '1px 5px',
+                              borderRadius: '999px',
+                              fontWeight: '900'
+                            }}>
+                              {pProg.percentage}%
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <button
-                    className="btn btn-secondary"
-                    onClick={handleNextObserved}
-                    disabled={playingPlayers.length <= 1}
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                    title="Ver cartón siguiente"
-                  >
-                    Sig. <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-
-              {/* Render del Cartón del Jugador Observado en Modo Solo Lectura (Estampado en Vivo) */}
-              {observedPlayer && (
-                gameState.mode === 75 
-                  ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
-                  : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
-              )}
-
-              {/* Botón de Inscripción si decide jugar */}
-              {gameState.paymentMode && (
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                  <button 
-                    className="btn-vintage-burgundy"
-                    onClick={upgradeToPlayer}
-                    style={{
-                      display: 'inline-flex',
+                  {/* Cabecera del Cartón Seleccionado con Navegación Anterior / Siguiente */}
+                  {observedPlayer && (
+                    <div style={{
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.75rem 1.6rem',
-                      fontSize: '1rem',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                    }}
-                  >
-                    <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
-                  </button>
-                </div>
-              )}
-            </div>
-          )
-        ) : (
-          playerData?.card && (
-            gameState.mode === 75 
-              ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
-              : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
-          )
-        )}
-      </div>
+                      justifyContent: 'space-between',
+                      background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                      borderRadius: '10px',
+                      border: '2px solid var(--gold-brass)',
+                      padding: '0.55rem 0.85rem',
+                      marginBottom: '0.75rem',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                    }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handlePrevObserved}
+                        disabled={playingPlayers.length <= 1}
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                        title="Ver cartón anterior"
+                      >
+                        <ChevronLeft size={16} /> Ant.
+                      </button>
 
-      {/* REACCIONES Y CONTROLES INFERIORES */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', marginTop: '1rem', marginBottom: '2rem' }}>
-        
-        {/* Barra de Reacciones para el Live Streaming */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          padding: '0.5rem 1.25rem', 
-          borderRadius: '999px',
-          background: 'linear-gradient(180deg, #F4E7CB 0%, #E6D2AE 100%)',
-          border: '2px solid var(--gold-brass)',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-        }}>
-          {['👏', '😂', '😲', '🎉', '❤️', '🍀'].map(emoji => (
-            <button 
-              key={emoji}
-              onClick={() => sendReaction(emoji)}
-              style={{
-                background: 'none', 
-                border: 'none', 
-                fontSize: '1.6rem', 
-                cursor: 'pointer',
-                transition: 'transform 0.15s',
-              }}
-              onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
-              onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-              title={`Enviar ${emoji} al streaming`}
-            >
-              {emoji}
-            </button>
-          ))}
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          <Eye size={16} color="#7E252D" />
+                          <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1rem', color: '#3A1015' }}>
+                            Cartón de {observedPlayer.name}
+                          </span>
+                          {observedProgress?.missing === 1 ? (
+                            <span style={{ backgroundColor: '#B71C1C', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', animation: 'pulse 1s infinite' }}>
+                              🔥 ¡A 1 BOLA!
+                            </span>
+                          ) : observedProgress?.missing === 2 ? (
+                            <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold', border: '1px solid #F59E0B' }}>
+                              🤞 ¡A 2 BOLAS!
+                            </span>
+                          ) : (
+                            <span style={{ backgroundColor: '#7E252D', color: '#FFF', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 'bold' }}>
+                              {observedProgress?.percentage}%
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '1px' }}>
+                          {observedProgress?.matched} de {observedProgress?.total} bolas acertadas en vivo (Faltan {observedProgress?.missing})
+                        </div>
+                      </div>
+
+                      <button
+                        className="btn btn-secondary"
+                        onClick={handleNextObserved}
+                        disabled={playingPlayers.length <= 1}
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                        title="Ver cartón siguiente"
+                      >
+                        Sig. <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Render del Cartón del Jugador Observado en Modo Solo Lectura (Estampado en Vivo) */}
+                  {observedPlayer && (
+                    gameState.mode === 75 
+                      ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
+                      : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
+                  )}
+
+                  {/* Botón de Inscripción si decide jugar */}
+                  {gameState.paymentMode && (
+                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                      <button 
+                        className="btn-vintage-burgundy"
+                        onClick={upgradeToPlayer}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.75rem 1.6rem',
+                          fontSize: '1rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                        }}
+                      >
+                        <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              playerData?.card && (
+                gameState.mode === 75 
+                  ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+                  : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+              )
+            )}
+          </div>
+
+          {/* REACCIONES Y BOTONES DE ACCIÓN */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '1rem', width: '100%' }}>
+            
+            {/* Barra de Reacciones para el Live Streaming */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.85rem', 
+              padding: '0.45rem 1.25rem', 
+              borderRadius: '999px',
+              background: 'linear-gradient(180deg, #F4E7CB 0%, #E6D2AE 100%)',
+              border: '2px solid var(--gold-brass)',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+            }}>
+              {['👏', '😂', '😲', '🎉', '❤️', '🍀'].map(emoji => (
+                <button 
+                  key={emoji}
+                  onClick={() => sendReaction(emoji)}
+                  style={{
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '1.6rem', 
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                  title={`Enviar ${emoji} al streaming`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Botones de acción del jugador */}
+            {!isSpectator && (
+              <div className="flex justify-center gap-3" style={{ width: '100%', flexWrap: 'wrap' }}>
+                {gameState.status === 'waiting' && (
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={changeCard} 
+                    style={{ padding: '0.85rem 1.75rem', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  >
+                    <RefreshCw size={18} /> Cambiar Cartón
+                  </button>
+                )}
+
+                <button 
+                  className="btn-vintage-burgundy" 
+                  onClick={claimBingo}
+                  disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
+                  style={{ 
+                    flex: 1,
+                    minWidth: '220px',
+                    maxWidth: '380px',
+                    padding: '0.95rem 2rem',
+                    fontSize: '1.35rem',
+                    boxShadow: '0 6px 18px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  <Trophy size={24} /> 
+                  {playerData?.bingoClaimed && !playerData?.isValidated ? 'Verificando...' : '¡BINGO!'}
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
 
-        {/* Botones de acción (sólo para jugadores con cartón) */}
-        {!isSpectator && (
-          <div className="flex justify-center gap-4" style={{ width: '100%', flexWrap: 'wrap' }}>
-            {gameState.status === 'waiting' && (
-              <button 
-                className="btn btn-secondary" 
-                onClick={changeCard} 
-                style={{ padding: '0.85rem 1.75rem', fontSize: '1.1rem' }}
-              >
-                <RefreshCw size={18} /> Cambiar Cartón
-              </button>
-            )}
+        {/* COLUMNA DERECHA: ESTADO DE LA MESA, SORTEO Y CARRERA AL BINGO EN VIVO */}
+        <div className="player-side-col">
+          
+          {/* Módulo 1: Sorteo de Bola o Estado de Espera */}
+          {gameState.status === 'playing' && (
+            <div className="card text-center animate-pop" style={{
+              padding: '1.5rem 1rem',
+              border: '3px solid var(--burgundy-primary)'
+            }}>
+              <h3 style={{
+                fontFamily: 'var(--font-serif)',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                fontSize: '0.92rem',
+                color: 'var(--text-vintage-muted)',
+                marginBottom: '0.85rem',
+                fontWeight: '800'
+              }}>
+                Última Bola Sorteada
+              </h3>
+              
+              <div key={currentNumber} className="animate-pop" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '135px',
+                height: '135px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle at 38% 32%, var(--wood-grain-light) 0%, var(--wood-grain-mid) 48%, var(--wood-grain-dark) 78%, var(--wood-grain-deep) 100%)',
+                color: 'var(--text-gold-emboss)',
+                boxShadow: '0 12px 25px rgba(0, 0, 0, 0.6), inset 0 3px 6px rgba(255, 255, 255, 0.35), inset 0 -6px 14px rgba(0, 0, 0, 0.85)',
+                border: '4px solid var(--gold-primary)',
+                marginBottom: '1rem',
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1' }}>
+                  {currentLetter && (
+                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: '900', color: 'var(--gold-highlight)', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                      {currentLetter}
+                    </span>
+                  )}
+                  <span style={{ 
+                    fontFamily: 'var(--font-serif)', 
+                    fontSize: '4.2rem', 
+                    fontWeight: '900', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.95)' 
+                  }}>
+                    {currentNumber}
+                  </span>
+                </div>
+              </div>
 
-            <button 
-              className="btn-vintage-burgundy" 
-              onClick={claimBingo}
-              disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
-              style={{ 
-                maxWidth: '340px',
-                padding: '0.95rem 2rem',
-                fontSize: '1.35rem'
-              }}
-            >
-              <Trophy size={24} /> 
-              {playerData?.bingoClaimed && !playerData?.isValidated ? 'Verificando...' : '¡BINGO!'}
-            </button>
-          </div>
-        )}
+              {/* Historial de bolas previas como fichas de madera */}
+              <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
+                {called.slice(-6, -1).reverse().map((num, i) => (
+                  <div key={`${num}-${i}`} className="animate-pop" style={{
+                    padding: '0.35rem 0.85rem',
+                    background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                    border: '1.5px solid var(--gold-brass)',
+                    borderRadius: '999px',
+                    fontFamily: 'var(--font-serif)',
+                    fontWeight: '800',
+                    color: 'var(--text-vintage-dark)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+                    fontSize: '0.9rem'
+                  }}>
+                    {num}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {gameState.status === 'waiting' && (
+            <div className="card text-center animate-pop" style={{
+              padding: '1.75rem 1.5rem',
+              border: '3px solid var(--gold-brass)',
+              background: 'radial-gradient(ellipse at center, var(--parchment-light) 0%, var(--parchment-base) 100%)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🎟️</div>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.45rem', fontWeight: '900', color: 'var(--burgundy-primary)', margin: '0 0 0.35rem' }}>
+                Mesa Lista • Ronda {currentRound}
+              </h3>
+              <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '380px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
+                El anfitrión iniciará la extracción de balotas en breve. Verifica tus números o cámbialo si prefieres otra combinación.
+              </p>
+
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.45rem 1rem',
+                borderRadius: '999px',
+                background: '#FAF4E5',
+                border: '1.5px solid var(--gold-brass)',
+                fontSize: '0.88rem',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: 'bold',
+                color: '#3A1015'
+              }}>
+                <span>👥 {playingPlayers.length} Participantes listos</span>
+              </div>
+            </div>
+          )}
+
+          {gameState.status === 'finished' && (
+            <div className="card text-center animate-pop" style={{
+              padding: '1.75rem 1.5rem',
+              border: '3px solid var(--gold-primary)',
+              background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #EFE1C6 100%)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🏆🎉</div>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: '900', color: 'var(--burgundy-primary)', margin: '0 0 0.4rem' }}>
+                ¡Ronda {currentRound} Finalizada!
+              </h3>
+              {gameState.winners && gameState.winners.length > 0 ? (
+                <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#2C1A0E', margin: '0.5rem 0' }}>
+                  Ganador: {gameState.winners.join(', ')}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-vintage-muted)' }}>Ronda concluida.</p>
+              )}
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', margin: 0 }}>
+                El anfitrión iniciará la siguiente ronda pronto...
+              </p>
+            </div>
+          )}
+
+          {/* Módulo 2: Carrera hacia el Bingo en Tiempo Real (Widget en vivo para escritorio) */}
+          <BingoRaceHostWidget
+            players={allPlayers}
+            calledNumbers={called}
+            mode={gameState.mode}
+            currentUserId={userId}
+          />
+
+        </div>
       </div>
 
       {/* Chat Familiar en tiempo real */}

@@ -5,7 +5,8 @@ import { calculateCardProgress } from '../utils/bingo';
 const BingoRaceHostWidget = ({
   players = [],
   calledNumbers = [],
-  mode = 75
+  mode = 75,
+  currentUserId = null
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -77,13 +78,14 @@ const BingoRaceHostWidget = ({
           style={{
             padding: '0.85rem 1.25rem',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
             gap: '0.75rem',
             maxHeight: '260px',
             overflowY: 'auto'
           }}
         >
           {activePlayers.map((player, idx) => {
+            const isMe = currentUserId === player.id;
             const { percentage, missing, matched, total } = player.progress;
             const isWinnerCandidate = missing === 1;
             const isClose = missing <= 2 && percentage > 0;
@@ -92,11 +94,15 @@ const BingoRaceHostWidget = ({
               <div
                 key={player.id}
                 style={{
-                  backgroundColor: '#FFFDF9',
-                  border: isWinnerCandidate ? '2px solid #B71C1C' : '1.5px solid var(--gold-brass)',
+                  backgroundColor: isMe ? '#FFF9EE' : '#FFFDF9',
+                  border: isMe 
+                    ? '2px solid var(--gold-primary)' 
+                    : isWinnerCandidate 
+                    ? '2px solid #B71C1C' 
+                    : '1.5px solid var(--gold-brass)',
                   borderRadius: '8px',
                   padding: '0.55rem 0.8rem',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
+                  boxShadow: isMe ? '0 2px 8px rgba(197, 155, 39, 0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
                 }}
               >
                 {/* Rango, Nombre y Alerta */}
@@ -142,6 +148,20 @@ const BingoRaceHostWidget = ({
                     }}>
                       {player.name}
                     </span>
+
+                    {isMe && (
+                      <span style={{
+                        backgroundColor: 'var(--burgundy-primary)',
+                        color: '#fff',
+                        fontSize: '0.62rem',
+                        padding: '1px 5px',
+                        borderRadius: '999px',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }}>
+                        TÚ
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
