@@ -58,6 +58,7 @@ const PlayerPanel = () => {
   const [allPlayers, setAllPlayers] = useState([]);
   const [showRaceModal, setShowRaceModal] = useState(false);
   const [selectedObservedPlayerId, setSelectedObservedPlayerId] = useState(null);
+  const [invalidBingoModal, setInvalidBingoModal] = useState({ show: false, message: '', title: '' });
   const winAnimationPlayedRef = useRef(false);
   const prevApprovedRef = useRef(false);
 
@@ -253,7 +254,12 @@ const PlayerPanel = () => {
 
   const claimBingo = async () => {
     if (gameState.status !== 'playing') {
-      alert("La partida no está en curso.");
+      playSound('pop');
+      setInvalidBingoModal({
+        show: true,
+        title: 'Partida en Pausa',
+        message: 'La extracción de números no está en curso en este momento. Espera a que el anfitrión inicie la ronda.'
+      });
       return;
     }
 
@@ -267,7 +273,12 @@ const PlayerPanel = () => {
         isValidated: true
       });
     } else {
-      alert("¡Bingo Inválido! Revisa bien tu cartón.");
+      playSound('pop');
+      setInvalidBingoModal({
+        show: true,
+        title: '¡Bingo Inválido!',
+        message: 'Tu cartón aún no cumple con la condición de victoria o te faltan números por salir en el bolillero. ¡Revisa con calma y sigue jugando!'
+      });
       await updateDoc(doc(db, 'games', gameId, 'players', userId), {
         bingoClaimed: true,
         isValidated: false
@@ -1201,6 +1212,112 @@ const PlayerPanel = () => {
         mode={gameState.mode}
         currentUserId={userId}
       />
+
+      {/* MODAL DE BINGO INVÁLIDO CON TEMÁTICA VINTAGE CLÁSICA */}
+      {invalidBingoModal.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(20, 8, 4, 0.82)',
+          backdropFilter: 'blur(7px)',
+          zIndex: 1200,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.25rem'
+        }}>
+          <div 
+            className="vintage-parchment-card animate-pop" 
+            style={{ 
+              maxWidth: '460px', 
+              width: '100%', 
+              padding: '2.25rem 1.75rem',
+              position: 'relative',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9), inset 0 0 35px rgba(120, 80, 40, 0.25)'
+            }}
+          >
+            <FiligreeCorner position="top-left" />
+            <FiligreeCorner position="top-right" />
+            <FiligreeCorner position="bottom-left" />
+            <FiligreeCorner position="bottom-right" />
+
+            {/* Sello / Escudo de Aviso Vintage */}
+            <div style={{
+              width: '74px',
+              height: '74px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8C222C 0%, #5C1D24 70%, #3B1015 100%)',
+              border: '3px solid var(--gold-primary)',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.4rem'
+            }}>
+              ⚖️
+            </div>
+
+            {/* Título de Alerta Clásica */}
+            <h3 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '1.75rem',
+              fontWeight: '900',
+              color: 'var(--burgundy-primary)',
+              margin: '0 0 0.5rem',
+              letterSpacing: '1px',
+              textShadow: '0 1px 2px rgba(255,255,255,0.8)'
+            }}>
+              {invalidBingoModal.title}
+            </h3>
+
+            <div style={{
+              display: 'inline-block',
+              padding: '2px 12px',
+              borderRadius: '999px',
+              backgroundColor: '#FDE8E8',
+              color: '#9B1C1C',
+              fontFamily: 'var(--font-serif)',
+              fontSize: '0.8rem',
+              fontWeight: 'bold',
+              border: '1px solid #F8B4B4',
+              marginBottom: '1rem'
+            }}>
+              Revisión del Árbitro
+            </div>
+
+            {/* Mensaje descriptivo */}
+            <p style={{
+              fontSize: '1rem',
+              color: 'var(--text-vintage-dark)',
+              lineHeight: 1.5,
+              marginBottom: '1.5rem',
+              padding: '0 0.5rem'
+            }}>
+              {invalidBingoModal.message}
+            </p>
+
+            <button
+              type="button"
+              className="btn-vintage-burgundy"
+              onClick={() => setInvalidBingoModal({ show: false, message: '', title: '' })}
+              style={{
+                width: '100%',
+                maxWidth: '260px',
+                margin: '0 auto',
+                padding: '0.75rem 1.5rem',
+                fontSize: '1.05rem',
+                cursor: 'pointer'
+              }}
+            >
+              Entendido, Continuar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
