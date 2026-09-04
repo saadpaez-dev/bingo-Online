@@ -910,6 +910,13 @@ const PlayerPanel = () => {
               }}>
                 Ronda {currentRound} • {gameState.status === 'playing' ? 'En Curso' : gameState.status === 'waiting' ? 'Esperando sorteo' : 'Finalizada'}
               </span>
+              <span style={{ 
+                color: '#15803D',
+                fontWeight: '700',
+                fontFamily: 'var(--font-serif)'
+              }}>
+                • 👥 {allPlayers.filter(p => p.isOnline !== false && (!p.lastSeen || Date.now() - p.lastSeen <= 40000)).length} conectados
+              </span>
             </div>
           </div>
         </div>

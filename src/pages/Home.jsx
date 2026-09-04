@@ -67,38 +67,66 @@ const Home = () => {
 
   // Sala activa del Anfitrión (Reconexión rápida), Partida de Jugador y Salas Públicas en vivo
   const [activeHostGame, setActiveHostGame] = useState(null);
+  const [hostPlayers, setHostPlayers] = useState([]);
   const [activePlayerGame, setActivePlayerGame] = useState(null);
+  const [playerGamePlayers, setPlayerGamePlayers] = useState([]);
   const [activeRooms, setActiveRooms] = useState([]);
 
   const navigate = useNavigate();
   const { playSound } = useSettings();
 
-  // 1. Escuchar la sala activa del Anfitrión si existe en localStorage
+  const isPlayerOnline = (p) => {
+    if (!p) return false;
+    if (p.isOnline === false) return false;
+    if (p.lastSeen && (Date.now() - p.lastSeen > 40000)) return false;
+    return true;
+  };
+
+  const hostOnlineCount = hostPlayers.filter(isPlayerOnline).length;
+  const playerGameOnlineCount = playerGamePlayers.filter(isPlayerOnline).length;
+
+  // 1. Escuchar la sala activa del Anfitrión y sus jugadores
   useEffect(() => {
     const savedHostGameId = localStorage.getItem('bingo_dealer_active_game');
-    if (!savedHostGameId) return;
+    if (!savedHostGameId) {
+      setActiveHostGame(null);
+      setHostPlayers([]);
+      return;
+    }
 
-    const unsub = onSnapshot(doc(db, 'games', savedHostGameId), (docSnap) => {
+    const unsubGame = onSnapshot(doc(db, 'games', savedHostGameId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.status !== 'archived' && data.status !== 'closed') {
           setActiveHostGame({ id: savedHostGameId, ...data });
         } else {
           setActiveHostGame(null);
+          setHostPlayers([]);
           localStorage.removeItem('bingo_dealer_active_game');
         }
       } else {
         setActiveHostGame(null);
+        setHostPlayers([]);
         localStorage.removeItem('bingo_dealer_active_game');
       }
     }, (err) => {
       console.warn('Error verificando sala de anfitrión:', err);
     });
 
-    return () => unsub();
+    const unsubPlayers = onSnapshot(collection(db, 'games', savedHostGameId, 'players'), (snap) => {
+      const pData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setHostPlayers(pData);
+    }, (err) => {
+      console.warn('Error cargando jugadores del anfitrión:', err);
+    });
+
+    return () => {
+      unsubGame();
+      unsubPlayers();
+    };
   }, []);
 
-  // 1.1 Escuchar la partida activa de Jugador si existe en localStorage
+  // 1.1 Escuchar la partida activa de Jugador y sus jugadores
   useEffect(() => {
     const savedPlayerGameId = localStorage.getItem('bingo_player_active_game');
     const savedHostGameId = localStorage.getItem('bingo_dealer_active_game');
@@ -106,27 +134,40 @@ const Home = () => {
     // Si ya somos el anfitrión de esta misma sala, no mostramos el banner duplicado
     if (!savedPlayerGameId || savedPlayerGameId === savedHostGameId) {
       setActivePlayerGame(null);
+      setPlayerGamePlayers([]);
       return;
     }
 
-    const unsub = onSnapshot(doc(db, 'games', savedPlayerGameId), (docSnap) => {
+    const unsubGame = onSnapshot(doc(db, 'games', savedPlayerGameId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.status !== 'archived' && data.status !== 'closed') {
           setActivePlayerGame({ id: savedPlayerGameId, ...data });
         } else {
           setActivePlayerGame(null);
+          setPlayerGamePlayers([]);
           localStorage.removeItem('bingo_player_active_game');
         }
       } else {
         setActivePlayerGame(null);
+        setPlayerGamePlayers([]);
         localStorage.removeItem('bingo_player_active_game');
       }
     }, (err) => {
       console.warn('Error verificando partida de jugador:', err);
     });
 
-    return () => unsub();
+    const unsubPlayers = onSnapshot(collection(db, 'games', savedPlayerGameId, 'players'), (snap) => {
+      const pData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPlayerGamePlayers(pData);
+    }, (err) => {
+      console.warn('Error cargando jugadores de la sala del jugador:', err);
+    });
+
+    return () => {
+      unsubGame();
+      unsubPlayers();
+    };
   }, [activeHostGame]);
 
   // 2. Escuchar salas abiertas en vivo en Firestore
@@ -267,8 +308,12 @@ const Home = () => {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: '900', color: 'var(--burgundy-primary)', lineHeight: 1.1 }}>
                   Sala {activeHostGame.id}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#1B5E20', fontWeight: 'bold' }}>
-                  ● {activeHostGame.status === 'playing' ? `En Juego (Ronda ${activeHostGame.currentRound || 1})` : 'Mesa en Espera'}
+                <div style={{ fontSize: '0.74rem', color: '#1B5E20', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
+                  <span>● {activeHostGame.status === 'playing' ? `En Juego (Ronda ${activeHostGame.currentRound || 1})` : 'Mesa en Espera'}</span>
+                  <span>•</span>
+                  <span style={{ color: '#854D0E', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                    👥 {hostOnlineCount} {hostOnlineCount === 1 ? 'jugador conectado' : 'jugadores conectados'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -287,6 +332,7 @@ const Home = () => {
                 onClick={() => {
                   localStorage.removeItem('bingo_dealer_active_game');
                   setActiveHostGame(null);
+                  setHostPlayers([]);
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-vintage-muted)', padding: '0.2rem 0.4rem', fontSize: '1.1rem' }}
                 title="Descartar aviso de sala"
@@ -334,8 +380,12 @@ const Home = () => {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: '900', color: '#14532D', lineHeight: 1.1 }}>
                   Sala {activePlayerGame.id}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 'bold' }}>
-                  ● {activePlayerGame.status === 'playing' ? `En Juego (Ronda ${activePlayerGame.currentRound || 1})` : 'Mesa en Espera'}
+                <div style={{ fontSize: '0.74rem', color: '#15803D', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
+                  <span>● {activePlayerGame.status === 'playing' ? `En Juego (Ronda ${activePlayerGame.currentRound || 1})` : 'Mesa en Espera'}</span>
+                  <span>•</span>
+                  <span style={{ color: '#854D0E', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                    👥 {playerGameOnlineCount} {playerGameOnlineCount === 1 ? 'jugador conectado' : 'jugadores conectados'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -354,6 +404,7 @@ const Home = () => {
                 onClick={() => {
                   localStorage.removeItem('bingo_player_active_game');
                   setActivePlayerGame(null);
+                  setPlayerGamePlayers([]);
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#166534', padding: '0.2rem 0.4rem', fontSize: '1.1rem' }}
                 title="Descartar aviso"

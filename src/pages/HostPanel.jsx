@@ -517,11 +517,15 @@ const HostPanel = () => {
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
               Mesa del Anfitrión
             </h2>
-            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', flexWrap: 'wrap' }}>
               <span>Club Clásico</span>
               <span>•</span>
               <span style={{ color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
                 Ronda {currentRound} | Meta: {targetWins} Wins
+              </span>
+              <span>•</span>
+              <span style={{ color: '#1B5E20', fontWeight: 'bold' }}>
+                👥 {onlinePlayersCount} {onlinePlayersCount === 1 ? 'conectado' : 'conectados'}
               </span>
             </div>
           </div>
