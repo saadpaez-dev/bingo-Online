@@ -298,22 +298,22 @@ const Home = () => {
                         gap: '0.3rem'
                       }}
                     >
-                      <DollarSign size={15} /> De Pago (Tarjetón)
+                      <DollarSign size={15} /> De Pago (Torneo)
                     </button>
                   </div>
                 </div>
 
-                {/* Valor del Cartón (si es de pago) */}
+                {/* Valor del Torneo (si es de pago) */}
                 {paymentMode && (
                   <div className="animate-pop">
                     <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.8rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.2rem' }}>
-                      💵 Valor del Tarjetón / Apuesta:
+                      🏆 Valor de Inscripción al Torneo:
                     </label>
                     <input
                       type="text"
                       value={cardPrice}
                       onChange={e => setCardPrice(e.target.value)}
-                      placeholder="Ej: $5.000 COP o $10 USD"
+                      placeholder="Ej: $10.000 COP o $20 USD por jugador"
                       style={{
                         width: '100%',
                         padding: '0.45rem 0.75rem',
@@ -326,7 +326,7 @@ const Home = () => {
                       }}
                     />
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem', display: 'block' }}>
-                      * El cartón de los jugadores quedará bloqueado hasta que reporten el pago y tú lo apruebes.
+                      * Pago único por jugador para participar en todas las rondas del torneo. El acceso quedará bloqueado hasta que reporten el pago y tú lo apruebes.
                     </span>
                   </div>
                 )}

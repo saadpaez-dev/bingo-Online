@@ -192,9 +192,9 @@ const PlayerPanel = () => {
   const toggleMark = (num) => {
     if (num === 'FREE' || num === null) return;
     
-    // Bloquear marcado si el cartón no está pagado/aprobado
+    // Bloquear marcado si la inscripción al torneo no está aprobada
     if (gameState?.paymentMode && playerData?.paymentStatus !== 'approved') {
-      alert("Tu cartón está bloqueado. Debes confirmar tu pago y esperar la aprobación del anfitrión.");
+      alert("Tu participación está bloqueada. Debes confirmar el pago de tu inscripción al torneo y esperar la aprobación del anfitrión.");
       return;
     }
 
@@ -214,7 +214,7 @@ const PlayerPanel = () => {
     }
 
     if (gameState?.paymentMode && playerData?.paymentStatus !== 'approved') {
-      alert("No puedes cantar Bingo con un cartón bloqueado pendiente de pago.");
+      alert("No puedes cantar Bingo sin tener aprobada tu inscripción al torneo.");
       return;
     }
 
@@ -312,7 +312,7 @@ const PlayerPanel = () => {
               Unirse a Sala <span style={{ color: 'var(--burgundy-primary)' }}>{gameId}</span>
             </h2>
             <p className="vintage-subtitle">
-              {gameState.paymentMode ? `Modalidad: De Pago (${gameState.cardPrice})` : 'Modalidad: Fichas de Casino (Gratis)'}
+              {gameState.paymentMode ? `Modalidad: De Pago (Inscripción al Torneo: ${gameState.cardPrice})` : 'Modalidad: Fichas de Casino (Gratis)'}
             </p>
           </div>
 
@@ -538,11 +538,11 @@ const PlayerPanel = () => {
             </div>
 
             <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', color: 'var(--text-gold-emboss)', fontWeight: '900', marginBottom: '0.3rem' }}>
-              Cartón Bloqueado
+              Inscripción al Torneo Pendiente
             </h3>
 
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', color: '#E8D5B7', maxWidth: '340px', marginBottom: '1.25rem', lineHeight: 1.35 }}>
-              Esta partida requiere el pago de tu entrada <strong style={{ color: 'var(--gold-highlight)' }}>({gameState.cardPrice})</strong> para poder jugar y marcar números.
+              Esta mesa requiere el pago de tu inscripción al torneo <strong style={{ color: 'var(--gold-highlight)' }}>({gameState.cardPrice})</strong> para participar en todas las rondas y disputar el premio.
             </p>
 
             {isPaymentPending ? (
@@ -558,7 +558,7 @@ const PlayerPanel = () => {
               }}>
                 <Clock size={20} />
                 <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.92rem', fontWeight: '700' }}>
-                  Esperando que el anfitrión apruebe tu pago...
+                  Esperando que el anfitrión apruebe tu inscripción al torneo...
                 </span>
               </div>
             ) : (
@@ -567,7 +567,7 @@ const PlayerPanel = () => {
                 onClick={notifyPayment}
                 style={{ width: '100%', maxWidth: '320px', padding: '0.9rem' }}
               >
-                <CheckCircle size={20} /> Ya realicé mi pago / Confirmar
+                <CheckCircle size={20} /> Ya pagué mi inscripción / Confirmar
               </button>
             )}
           </div>

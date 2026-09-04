@@ -394,7 +394,7 @@ const HostPanel = () => {
             fontWeight: 'bold',
             fontFamily: 'var(--font-serif)'
           }}>
-            {paymentMode ? `Tarjetón de Pago (${cardPrice})` : 'Fichas de Casino (Gratis)'}
+            {paymentMode ? `Inscripción al Torneo (${cardPrice})` : 'Fichas de Casino (Gratis)'}
           </span>
         </div>
 
@@ -461,7 +461,7 @@ const HostPanel = () => {
                 }}>
                   <Clock size={16} color="#D97706" />
                   <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#92400E' }}>
-                    {pendingPaymentsCount} socio(s) esperando habilitación de cartón.
+                    {pendingPaymentsCount} socio(s) esperando aprobación de inscripción al torneo.
                   </span>
                   <button 
                     onClick={() => setShowPlayersModal(true)}
@@ -781,7 +781,7 @@ const HostPanel = () => {
                   Socios en la Mesa ({players.length})
                 </h3>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-vintage-muted)' }}>
-                  {paymentMode ? `Modalidad de Pago: ${cardPrice}` : 'Modalidad: Fichas de Casino (Gratis)'}
+                  {paymentMode ? `Inscripción al Torneo: ${cardPrice}` : 'Modalidad: Fichas de Casino (Gratis)'}
                 </span>
               </div>
               <button 
@@ -796,7 +796,7 @@ const HostPanel = () => {
             {paymentMode && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', background: '#FFF8EA', padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid var(--gold-brass)' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
-                  Habilitar a todos los socios:
+                  Aprobar inscripción a todos los socios:
                 </span>
                 <button 
                   onClick={approveAllPayments}
@@ -869,7 +869,7 @@ const HostPanel = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {isApproved ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#1B5E20', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                              <CheckCircle size={16} /> Habilitado
+                              <CheckCircle size={16} /> Inscrito al Torneo
                             </span>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -881,14 +881,14 @@ const HostPanel = () => {
                                 padding: '2px 6px',
                                 borderRadius: '4px'
                               }}>
-                                {isPending ? 'Pago Notificado' : 'Sin Pagar'}
+                                {isPending ? 'Inscripción Notificada' : 'Inscripción Pendiente'}
                               </span>
                               <button
                                 onClick={() => approvePlayerPayment(p.id)}
                                 className="btn btn-primary"
                                 style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
                               >
-                                Habilitar Cartón
+                                Habilitar al Torneo
                               </button>
                             </div>
                           )}
