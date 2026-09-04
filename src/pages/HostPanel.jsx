@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye } from 'lucide-react';
+import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
@@ -11,6 +11,7 @@ import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 
 const HostPanel = () => {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const [gameState, setGameState] = useState(null);
   const [players, setPlayers] = useState([]);
   const [intervalTime, setIntervalTime] = useState(5);
@@ -283,26 +284,49 @@ const HostPanel = () => {
   const pendingPaymentsCount = players.filter(p => p.role !== 'spectator' && p.paymentStatus === 'pending_approval').length;
 
   return (
-    <div className="app-container" style={{ maxWidth: '1080px', position: 'relative' }}>
+    <div className="app-container" style={{ maxWidth: '1440px', position: 'relative', width: '100%' }}>
       
       {/* Comentarios en vivo estilo Streamer a un lado */}
       <LiveCommentsOverlay gameId={gameId} />
 
       {/* HEADER DEL ANFITRIÓN */}
       <div className="card flex justify-between items-center animate-pop" style={{ 
-        padding: '1.25rem 2rem',
-        border: '3px solid var(--burgundy-primary)'
+        padding: '1rem 1.75rem',
+        border: '3px solid var(--burgundy-primary)',
+        gap: '1rem',
+        flexWrap: 'wrap'
       }}>
-        <div>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
-            Mesa del Anfitrión
-          </h2>
-          <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Club Clásico</span>
-            <span>•</span>
-            <span style={{ color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
-              Ronda {currentRound} | Meta: {targetWins} Wins
-            </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            className="btn btn-secondary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.55rem 1rem',
+              fontSize: '0.9rem',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 'bold',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+            }}
+            title="Volver a la página principal"
+          >
+            <Home size={18} />
+            <span>Inicio</span>
+          </button>
+
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
+              Mesa del Anfitrión
+            </h2>
+            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+              <span>Club Clásico</span>
+              <span>•</span>
+              <span style={{ color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
+                Ronda {currentRound} | Meta: {targetWins} Wins
+              </span>
+            </div>
           </div>
         </div>
         
@@ -437,61 +461,63 @@ const HostPanel = () => {
       />
 
       {/* ÁREA PRINCIPAL MODO SALA / TV */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+      <div className="host-game-grid">
         
         {/* PANEL IZQUIERDO: SORTEO Y BOLA ACTIVA */}
-        <div className="card animate-pop flex flex-col items-center justify-center" style={{ 
-          minHeight: '440px', 
-          border: '3px solid var(--burgundy-primary)'
-        }}>
-          
-          {gameState.status === 'waiting' && (
-            <div className="text-center" style={{ width: '100%' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '0.75rem' }}>🎟️</div>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '0.3rem' }}>
-                Mesa Lista - Ronda {currentRound}
-              </h2>
-              <p className="vintage-subtitle" style={{ marginBottom: '1.25rem' }}>
-                {players.length === 0 
-                  ? 'Esperando a los participantes...' 
-                  : `${players.length} socios en la mesa listos para el sorteo.`
-                }
-              </p>
+        <div className="host-controls-col">
+          <div className="card animate-pop flex flex-col items-center justify-center" style={{ 
+            padding: '2rem 1.5rem', 
+            border: '3px solid var(--burgundy-primary)',
+            minHeight: '380px'
+          }}>
+            
+            {gameState.status === 'waiting' && (
+              <div className="text-center" style={{ width: '100%' }}>
+                <div style={{ fontSize: '3.5rem', marginBottom: '0.5rem' }}>🎟️</div>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.85rem', marginBottom: '0.3rem', color: 'var(--text-vintage-dark)', fontWeight: '900' }}>
+                  Mesa Lista - Ronda {currentRound}
+                </h2>
+                <p className="vintage-subtitle" style={{ marginBottom: '1.25rem', fontSize: '1rem' }}>
+                  {players.length === 0 
+                    ? 'Esperando a los participantes...' 
+                    : `${players.length} socios en la mesa listos para el sorteo.`
+                  }
+                </p>
 
-              {paymentMode && pendingPaymentsCount > 0 && (
-                <div style={{ 
-                  backgroundColor: '#FFF4E5', 
-                  border: '1.5px solid #F59E0B', 
-                  borderRadius: '8px', 
-                  padding: '0.5rem 1rem', 
-                  marginBottom: '1rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <Clock size={16} color="#D97706" />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#92400E' }}>
-                    {pendingPaymentsCount} socio(s) esperando aprobación de inscripción al torneo.
-                  </span>
-                  <button 
-                    onClick={() => setShowPlayersModal(true)}
-                    style={{ textDecoration: 'underline', background: 'none', border: 'none', color: '#B45309', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                  >
-                    Ver lista
-                  </button>
-                </div>
-              )}
+                {paymentMode && pendingPaymentsCount > 0 && (
+                  <div style={{ 
+                    backgroundColor: '#FFF4E5', 
+                    border: '1.5px solid #F59E0B', 
+                    borderRadius: '8px', 
+                    padding: '0.6rem 1rem', 
+                    marginBottom: '1.25rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <Clock size={16} color="#D97706" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#92400E' }}>
+                      {pendingPaymentsCount} socio(s) esperando aprobación de inscripción al torneo.
+                    </span>
+                    <button 
+                      onClick={() => setShowPlayersModal(true)}
+                      style={{ textDecoration: 'underline', background: 'none', border: 'none', color: '#B45309', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                    >
+                      Ver lista
+                    </button>
+                  </div>
+                )}
 
-              <button 
-                className="btn-vintage-burgundy" 
-                onClick={startGame} 
-                disabled={players.length === 0}
-                style={{ width: '100%', maxWidth: '340px' }}
-              >
-                <Play size={22} /> Iniciar Ronda {currentRound} ({gameState.mode} Bolas)
-              </button>
-            </div>
-          )}
+                <button 
+                  className="btn-vintage-burgundy" 
+                  onClick={startGame} 
+                  disabled={players.length === 0}
+                  style={{ width: '100%', maxWidth: '340px', fontSize: '1.1rem', padding: '0.85rem 1.5rem' }}
+                >
+                  <Play size={22} /> Iniciar Ronda {currentRound} ({gameState.mode} Bolas)
+                </button>
+              </div>
+            )}
 
           {gameState.status === 'playing' && (
             <div className="text-center" style={{ width: '100%' }}>
@@ -682,73 +708,186 @@ const HostPanel = () => {
           )}
 
         </div>
+        </div>
 
         {/* PANEL DERECHO: TABLERO GENERAL MAESTRO DE CAOBA */}
-        <div className="card animate-pop" style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          border: '3px solid var(--burgundy-primary)'
-        }}>
-          <div className="flex justify-between items-center mb-3">
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.3rem', fontWeight: '800' }}>
-              Tablero Maestro
-            </h3>
-            <span className="vintage-brass-plaque" style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', margin: 0 }}>
-              Faltan {maxNumber - called.length} bolas
-            </span>
-          </div>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: gameState.mode === 75 ? 'repeat(5, 1fr)' : 'repeat(10, 1fr)',
-            gap: '0.3rem',
-            flex: 1,
-            alignContent: 'start',
-            padding: '0.5rem',
-            background: 'radial-gradient(circle at center, #3A1C11 0%, #200D07 100%)',
-            borderRadius: '10px',
-            border: '2px solid var(--gold-antique)',
-            boxShadow: 'inset 0 0 15px rgba(0,0,0,0.8)'
+        <div className="host-board-col">
+          <div className="card animate-pop" style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            border: '3px solid var(--burgundy-primary)',
+            padding: '1.25rem'
           }}>
-            {Array.from({ length: maxNumber }, (_, i) => i + 1).map(num => {
-              const isCalled = called.includes(num);
-              const isLast = num === currentNumber;
-              
-              return (
-                <div key={num} style={{
-                  aspectRatio: '1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: gameState.mode === 75 ? '1.15rem' : '0.82rem',
-                  fontFamily: 'var(--font-serif)',
-                  fontWeight: '800',
-                  borderRadius: '6px',
-                  background: isLast 
-                    ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
-                    : isCalled 
-                    ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
-                    : 'rgba(255, 255, 255, 0.06)',
-                  color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.4)',
-                  border: isLast 
-                    ? '2px solid var(--gold-primary)' 
-                    : isCalled 
-                    ? '1.5px solid #81C784' 
-                    : '1px solid rgba(140, 107, 35, 0.2)',
-                  opacity: isCalled ? 1 : 0.65,
-                  transform: isLast ? 'scale(1.15)' : 'scale(1)',
-                  zIndex: isLast ? 10 : 1,
-                  boxShadow: isLast 
-                    ? '0 0 14px rgba(212, 175, 55, 0.9)' 
-                    : isCalled 
-                    ? '0 2px 4px rgba(0,0,0,0.4)' 
-                    : 'none',
-                  textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-                }}>
-                  {num}
+            <div className="flex justify-between items-center mb-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', fontWeight: '900', margin: 0 }}>
+                  Tablero Maestro
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+                  ({called.length} extraídas de {maxNumber})
+                </span>
+              </div>
+              <span className="vintage-brass-plaque" style={{ padding: '0.25rem 0.75rem', fontSize: '0.82rem', margin: 0 }}>
+                Faltan {maxNumber - called.length} bolas
+              </span>
+            </div>
+            
+            <div style={{
+              flex: 1,
+              padding: '0.85rem',
+              background: 'radial-gradient(circle at center, #3A1C11 0%, #200D07 100%)',
+              borderRadius: '10px',
+              border: '2px solid var(--gold-antique)',
+              boxShadow: 'inset 0 0 18px rgba(0,0,0,0.85)',
+              overflowX: 'auto'
+            }}>
+              {gameState.mode === 75 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '640px' }}>
+                  {[
+                    { letter: 'B', range: [1, 15] },
+                    { letter: 'I', range: [16, 30] },
+                    { letter: 'N', range: [31, 45] },
+                    { letter: 'G', range: [46, 60] },
+                    { letter: 'O', range: [61, 75] }
+                  ].map(({ letter, range }) => (
+                    <div key={letter} style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '44px repeat(15, 1fr)', 
+                      gap: '0.25rem',
+                      alignItems: 'center'
+                    }}>
+                      {/* Letra de la Fila */}
+                      <div style={{
+                        aspectRatio: '1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.25rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '900',
+                        borderRadius: '7px',
+                        background: 'radial-gradient(circle at 35% 30%, #8C222C 0%, #5C1D24 100%)',
+                        color: 'var(--gold-primary)',
+                        border: '2px solid var(--gold-brass)',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+                      }}>
+                        {letter}
+                      </div>
+
+                      {/* 15 Bolas correspondientes */}
+                      {Array.from({ length: range[1] - range[0] + 1 }, (_, i) => range[0] + i).map(num => {
+                        const isCalled = called.includes(num);
+                        const isLast = num === currentNumber;
+                        return (
+                          <div key={num} style={{
+                            aspectRatio: '1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.92rem',
+                            fontFamily: 'var(--font-serif)',
+                            fontWeight: '800',
+                            borderRadius: '6px',
+                            background: isLast 
+                              ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
+                              : isCalled 
+                              ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
+                              : 'rgba(255, 255, 255, 0.05)',
+                            color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.35)',
+                            border: isLast 
+                              ? '2px solid var(--gold-primary)' 
+                              : isCalled 
+                              ? '1.5px solid #81C784' 
+                              : '1px solid rgba(140, 107, 35, 0.18)',
+                            opacity: isCalled ? 1 : 0.6,
+                            transform: isLast ? 'scale(1.15)' : 'scale(1)',
+                            zIndex: isLast ? 10 : 1,
+                            boxShadow: isLast 
+                              ? '0 0 14px rgba(212, 175, 55, 0.95)' 
+                              : isCalled 
+                              ? '0 2px 4px rgba(0,0,0,0.4)' 
+                              : 'none',
+                            textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}>
+                            {num}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '550px' }}>
+                  {Array.from({ length: 9 }, (_, r) => ({ rowNum: r + 1, start: r * 10 + 1, end: (r + 1) * 10 })).map(({ rowNum, start, end }) => (
+                    <div key={rowNum} style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '50px repeat(10, 1fr)', 
+                      gap: '0.25rem',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        minHeight: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.72rem',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '900',
+                        borderRadius: '5px',
+                        background: 'radial-gradient(circle at 35% 30%, #8C222C 0%, #5C1D24 100%)',
+                        color: 'var(--gold-primary)',
+                        border: '1.5px solid var(--gold-brass)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                      }}>
+                        {start}-{end}
+                      </div>
+
+                      {Array.from({ length: 10 }, (_, i) => start + i).map(num => {
+                        const isCalled = called.includes(num);
+                        const isLast = num === currentNumber;
+                        return (
+                          <div key={num} style={{
+                            aspectRatio: '1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.92rem',
+                            fontFamily: 'var(--font-serif)',
+                            fontWeight: '800',
+                            borderRadius: '5px',
+                            background: isLast 
+                              ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
+                              : isCalled 
+                              ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
+                              : 'rgba(255, 255, 255, 0.05)',
+                            color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.35)',
+                            border: isLast 
+                              ? '2px solid var(--gold-primary)' 
+                              : isCalled 
+                              ? '1.5px solid #81C784' 
+                              : '1px solid rgba(140, 107, 35, 0.18)',
+                            opacity: isCalled ? 1 : 0.6,
+                            transform: isLast ? 'scale(1.15)' : 'scale(1)',
+                            zIndex: isLast ? 10 : 1,
+                            boxShadow: isLast 
+                              ? '0 0 14px rgba(212, 175, 55, 0.95)' 
+                              : isCalled 
+                              ? '0 2px 4px rgba(0,0,0,0.4)' 
+                              : 'none',
+                            textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
+                          }}>
+                            {num}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

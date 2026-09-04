@@ -618,6 +618,27 @@ body::before {
   width: 100%;
 }
 
+.host-game-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.host-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.host-board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
 @media (min-width: 992px) {
   .player-game-grid {
     display: grid;
@@ -631,8 +652,22 @@ body::before {
     max-width: 100%;
   }
 
+  .host-game-grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 430px) 1fr;
+    gap: 1.75rem;
+    align-items: start;
+  }
+
   .desktop-hidden {
     display: none !important;
+  }
+}
+
+@media (min-width: 1300px) {
+  .host-game-grid {
+    grid-template-columns: minmax(390px, 460px) 1fr;
+    gap: 2rem;
   }
 }
 
@@ -641,4 +676,5 @@ body::before {
     display: none !important;
   }
 }
+
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
 import { generateCard75, generateCard90, validateBingo75, validateBingo90, calculateCardProgress } from '../utils/bingo';
@@ -9,7 +9,7 @@ import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceModal from '../components/BingoRaceModal';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
-import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 
@@ -37,6 +37,7 @@ const FiligreeCorner = ({ position }) => (
 
 const PlayerPanel = () => {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [hasJoined, setHasJoined] = useState(false);
   const [gameState, setGameState] = useState(null);
@@ -624,7 +625,26 @@ const PlayerPanel = () => {
         borderRadius: '12px',
         border: '3px solid var(--burgundy-primary)'
       }}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="btn btn-secondary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.45rem 0.75rem',
+              fontSize: '0.85rem',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 'bold',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+            title="Volver al inicio"
+          >
+            <Home size={17} />
+            <span className="mobile-hidden">Inicio</span>
+          </button>
+
           <div style={{ 
             width: '56px', 
             height: '56px', 
