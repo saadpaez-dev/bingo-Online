@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck } from 'lucide-react';
+import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
@@ -179,9 +179,11 @@ const HostPanel = () => {
   const approveAllPayments = async () => {
     playSound('pop');
     for (const p of players) {
-      await updateDoc(doc(db, 'games', gameId, 'players', p.id), {
-        paymentStatus: 'approved'
-      });
+      if (p.role !== 'spectator') {
+        await updateDoc(doc(db, 'games', gameId, 'players', p.id), {
+          paymentStatus: 'approved'
+        });
+      }
     }
   };
 
@@ -273,11 +275,11 @@ const HostPanel = () => {
     else currentLetter = 'O';
   }
 
-  // Ordenar socios por victorias para la tabla de posiciones
-  const leaderboard = [...players].sort((a, b) => (b.wins || 0) - (a.wins || 0));
+  // Ordenar socios por victorias para la tabla de posiciones (excluyendo observadores)
+  const leaderboard = [...players].filter(p => p.role !== 'spectator').sort((a, b) => (b.wins || 0) - (a.wins || 0));
 
-  // Conteo de pagos pendientes
-  const pendingPaymentsCount = players.filter(p => p.paymentStatus === 'pending_approval').length;
+  // Conteo de pagos pendientes (sólo jugadores inscritos, no observadores)
+  const pendingPaymentsCount = players.filter(p => p.role !== 'spectator' && p.paymentStatus === 'pending_approval').length;
 
   return (
     <div className="app-container" style={{ maxWidth: '1080px', position: 'relative' }}>
@@ -858,14 +860,35 @@ const HostPanel = () => {
                           <div style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-vintage-dark)' }}>
                             {p.name}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
-                            🏆 {p.wins || 0} / {targetWins} Victorias
-                          </div>
+                          {p.role === 'spectator' ? (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+                              Espectador en vivo
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
+                              🏆 {p.wins || 0} / {targetWins} Victorias
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Estado y Botón de Habilitación de Pago */}
-                      {paymentMode && (
+                      {p.role === 'spectator' ? (
+                        <span style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.3rem', 
+                          color: '#555', 
+                          fontSize: '0.8rem', 
+                          fontWeight: 'bold',
+                          backgroundColor: '#F0E6D2',
+                          padding: '3px 9px',
+                          borderRadius: '999px',
+                          border: '1px solid var(--gold-brass)'
+                        }}>
+                          <Eye size={15} /> Solo Observador
+                        </span>
+                      ) : paymentMode ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {isApproved ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#1B5E20', fontSize: '0.8rem', fontWeight: 'bold' }}>
@@ -893,9 +916,7 @@ const HostPanel = () => {
                             </div>
                           )}
                         </div>
-                      )}
-
-                      {!paymentMode && (
+                      ) : (
                         <span style={{ fontSize: '0.8rem', color: '#1B5E20', fontWeight: 'bold' }}>
                           🟢 Listo para Jugar
                         </span>

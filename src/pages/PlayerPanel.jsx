@@ -7,7 +7,7 @@ import BingoCard75 from '../components/BingoCard75';
 import BingoCard90 from '../components/BingoCard90';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
-import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard } from 'lucide-react';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 
@@ -132,13 +132,16 @@ const PlayerPanel = () => {
     });
   }, [playSound]);
 
-  const handleJoin = async (e, reportedPaid = false) => {
+  const handleJoin = async (e, joinRole = 'paid') => {
     if (e) e.preventDefault();
     if (!name.trim()) return;
 
-    const card = gameState.mode === 75 ? generateCard75() : generateCard90();
+    const isSpectator = joinRole === 'spectator';
     const isPaymentRequired = !!gameState.paymentMode;
-    const initialPaymentStatus = !isPaymentRequired ? 'approved' : (reportedPaid ? 'pending_approval' : 'unpaid');
+    const card = isSpectator ? null : (gameState.mode === 75 ? generateCard75() : generateCard90());
+    
+    // Si es observador no requiere pago; si es jugador de pago pasa a pending_approval; si es gratis approved
+    const initialPaymentStatus = isSpectator ? 'spectator' : (!isPaymentRequired ? 'approved' : 'pending_approval');
     
     await setDoc(doc(db, 'games', gameId, 'players', userId), {
       name: name.trim(),
@@ -148,10 +151,21 @@ const PlayerPanel = () => {
       bingoClaimed: false,
       isValidated: false,
       wins: 0,
+      role: isSpectator ? 'spectator' : 'player',
       paymentStatus: initialPaymentStatus
     });
     
     setHasJoined(true);
+  };
+
+  const upgradeToPlayer = async () => {
+    playSound('pop');
+    const card = gameState.mode === 75 ? generateCard75() : generateCard90();
+    await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+      card: card,
+      role: 'player',
+      paymentStatus: 'pending_approval'
+    });
   };
 
   const notifyPayment = async () => {
@@ -382,7 +396,7 @@ const PlayerPanel = () => {
                     type="button" 
                     className="btn-vintage-burgundy" 
                     disabled={!name.trim()}
-                    onClick={(e) => handleJoin(e, true)}
+                    onClick={(e) => handleJoin(e, 'paid')}
                     style={{ width: '100%', padding: '0.85rem 0.5rem', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                   >
                     <CheckCircle size={18} /> Ya realicé mi pago
@@ -390,20 +404,22 @@ const PlayerPanel = () => {
 
                   <button 
                     type="button" 
+                    className="btn btn-secondary"
                     disabled={!name.trim()}
-                    onClick={(e) => handleJoin(e, false)}
+                    onClick={(e) => handleJoin(e, 'spectator')}
                     style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: 'var(--burgundy-primary)', 
-                      fontFamily: 'var(--font-serif)', 
-                      fontSize: '0.85rem', 
-                      textDecoration: 'underline',
-                      cursor: 'pointer',
+                      width: '100%',
+                      padding: '0.65rem 0.5rem',
+                      fontSize: '0.95rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      fontFamily: 'var(--font-serif)',
                       fontWeight: '700'
                     }}
                   >
-                    Inscribirme y pagar más tarde
+                    <Eye size={17} /> Solo Observador (Ver en Vivo)
                   </button>
                 </div>
               </div>
@@ -412,7 +428,7 @@ const PlayerPanel = () => {
                 type="button" 
                 className="btn-vintage-burgundy" 
                 disabled={!name.trim()}
-                onClick={(e) => handleJoin(e, true)}
+                onClick={(e) => handleJoin(e, 'paid')}
                 style={{ width: '100%', maxWidth: '340px' }}
               >
                 Entrar a Jugar Gratis
@@ -429,7 +445,8 @@ const PlayerPanel = () => {
   // ESTADO 2: SALA DE ESPERA VIP DE VALIDACIÓN (hasJoined && !isApproved)
   // =========================================================================
   const isPaymentRequired = !!gameState.paymentMode;
-  const isApproved = !isPaymentRequired || playerData?.paymentStatus === 'approved';
+  const isSpectator = playerData?.role === 'spectator';
+  const isApproved = isSpectator || !isPaymentRequired || playerData?.paymentStatus === 'approved';
   const isPaymentPending = playerData?.paymentStatus === 'pending_approval';
 
   if (!isApproved) {
@@ -610,18 +627,29 @@ const PlayerPanel = () => {
           </div>
         </div>
 
-        {/* Marcador de Victorias del Jugador en el Torneo */}
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
-            <Trophy size={18} color="#C59B27" />
-            <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
-              {playerData?.wins || 0} / {targetWins}
+        {/* Marcador de Victorias del Jugador en el Torneo o Modo Observador */}
+        {isSpectator ? (
+          <div style={{ textAlign: 'right' }}>
+            <span className="vintage-brass-plaque" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}>
+              <Eye size={15} /> Modo Observador
+            </span>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem' }}>
+              En Vivo
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
+              <Trophy size={18} color="#C59B27" />
+              <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
+                {playerData?.wins || 0} / {targetWins}
+              </span>
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+              Meta del Torneo
             </span>
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
-            Meta del Torneo
-          </span>
-        </div>
+        )}
       </div>
 
       {/* ÁREA DE ÚLTIMA BOLA (BOLA 3D DE MADERA TALLADA) */}
@@ -695,13 +723,60 @@ const PlayerPanel = () => {
       )}
 
       {/* =========================================================
-         CARTÓN DE BINGO DESBLOQUEADO Y VISIBLE AL 100%
+         CARTÓN DE BINGO O LOBBY DE OBSERVADOR
          ========================================================= */}
       <div style={{ margin: '0 auto', width: '100%' }}>
-        {playerData?.card && (
-          gameState.mode === 75 
-            ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
-            : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+        {isSpectator ? (
+          <div className="vintage-parchment-card text-center animate-pop" style={{
+            padding: '2rem 1.5rem',
+            margin: '0.5rem auto',
+            maxWidth: '520px',
+            border: '2px dashed var(--gold-brass)',
+            background: 'linear-gradient(180deg, #FAF4E5 0%, #E8D5B7 100%)'
+          }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              margin: '0 auto 0.75rem',
+              background: '#FEF3C7',
+              color: '#92400E',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Eye size={30} />
+            </div>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-vintage-dark)', margin: '0 0 0.4rem' }}>
+              Estás viendo la partida en vivo
+            </h3>
+            <p style={{ fontSize: '0.92rem', color: '#4A2810', maxWidth: '400px', margin: '0 auto 1.25rem', lineHeight: 1.4 }}>
+              Disfruta la emoción, envía comentarios al streaming y comparte con la familia. Si deseas competir por el premio del torneo, puedes inscribirte en cualquier momento.
+            </p>
+
+            {gameState.paymentMode && (
+              <button 
+                className="btn-vintage-burgundy"
+                onClick={upgradeToPlayer}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.85rem 1.6rem',
+                  fontSize: '1.05rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                }}
+              >
+                <Trophy size={18} /> Inscribirme para Jugar ({gameState.cardPrice})
+              </button>
+            )}
+          </div>
+        ) : (
+          playerData?.card && (
+            gameState.mode === 75 
+              ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+              : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+          )
         )}
       </div>
 
@@ -738,32 +813,34 @@ const PlayerPanel = () => {
           ))}
         </div>
 
-        {/* Botones de acción */}
-        <div className="flex justify-center gap-4" style={{ width: '100%', flexWrap: 'wrap' }}>
-          {gameState.status === 'waiting' && (
-            <button 
-              className="btn btn-secondary" 
-              onClick={changeCard} 
-              style={{ padding: '0.85rem 1.75rem', fontSize: '1.1rem' }}
-            >
-              <RefreshCw size={18} /> Cambiar Cartón
-            </button>
-          )}
+        {/* Botones de acción (sólo para jugadores con cartón) */}
+        {!isSpectator && (
+          <div className="flex justify-center gap-4" style={{ width: '100%', flexWrap: 'wrap' }}>
+            {gameState.status === 'waiting' && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={changeCard} 
+                style={{ padding: '0.85rem 1.75rem', fontSize: '1.1rem' }}
+              >
+                <RefreshCw size={18} /> Cambiar Cartón
+              </button>
+            )}
 
-          <button 
-            className="btn-vintage-burgundy" 
-            onClick={claimBingo}
-            disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
-            style={{ 
-              maxWidth: '340px',
-              padding: '0.95rem 2rem',
-              fontSize: '1.35rem'
-            }}
-          >
-            <Trophy size={24} /> 
-            {playerData?.bingoClaimed && !playerData?.isValidated ? 'Verificando...' : '¡BINGO!'}
-          </button>
-        </div>
+            <button 
+              className="btn-vintage-burgundy" 
+              onClick={claimBingo}
+              disabled={gameState.status !== 'playing' || playerData?.bingoClaimed}
+              style={{ 
+                maxWidth: '340px',
+                padding: '0.95rem 2rem',
+                fontSize: '1.35rem'
+              }}
+            >
+              <Trophy size={24} /> 
+              {playerData?.bingoClaimed && !playerData?.isValidated ? 'Verificando...' : '¡BINGO!'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Chat Familiar en tiempo real */}
