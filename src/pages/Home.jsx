@@ -114,7 +114,7 @@ const Home = () => {
   };
 
   return (
-    <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
+    <div className="home-page-wrapper">
       
       {/* TARJETA DE PERGAMINO VINTAGE */}
       <div className="vintage-parchment-card animate-pop">

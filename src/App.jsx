@@ -20,9 +20,11 @@ const GlobalHeader = () => {
       justifyContent: showTitle ? 'space-between' : 'flex-end',
       alignItems: 'center',
       padding: '0.75rem 2rem',
-      background: 'linear-gradient(180deg, rgba(46, 21, 12, 0.95) 0%, rgba(22, 10, 6, 0.95) 100%)',
+      background: location.pathname === '/' 
+        ? 'rgba(22, 10, 6, 0.45)' 
+        : 'linear-gradient(180deg, rgba(46, 21, 12, 0.95) 0%, rgba(22, 10, 6, 0.95) 100%)',
       backdropFilter: 'blur(8px)',
-      borderBottom: '2px solid var(--gold-brass)',
+      borderBottom: location.pathname === '/' ? '1px solid rgba(197, 155, 39, 0.35)' : '2px solid var(--gold-brass)',
       position: 'sticky',
       top: 0,
       zIndex: 50,
@@ -96,7 +98,7 @@ function App() {
       <BrowserRouter>
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <GlobalHeader />
-          <main style={{ flex: 1, paddingBottom: '2rem' }}>
+          <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/host/:gameId" element={<HostPanel />} />
