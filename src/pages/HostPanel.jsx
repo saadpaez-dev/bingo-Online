@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, collection, getDocs, getDoc, addDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye, Home, Copy, Check } from 'lucide-react';
+import { Share2, Play, Square, Dices, Users, Trophy, Coins, DollarSign, CheckCircle, Clock, X, ShieldCheck, Eye, Home, Copy, Check, Power, UserMinus } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import ChatBox from '../components/Chat/ChatBox';
@@ -22,8 +22,12 @@ const HostPanel = () => {
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [showCloseRoomModal, setShowCloseRoomModal] = useState(false);
+  const [departedNotification, setDepartedNotification] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const { playSound } = useSettings();
+
+  const prevPlayersOnlineRef = useRef({});
 
   const roundEndingRef = useRef(false);
   const winAnimationPlayedRef = useRef(false);
@@ -352,6 +356,77 @@ const HostPanel = () => {
     );
   }
 
+  const isPlayerOnline = useCallback((p) => {
+    if (!p) return false;
+    if (p.isOnline === false) return false;
+    if (p.lastSeen && (Date.now() - p.lastSeen > 40000)) return false;
+    return true;
+  }, []);
+
+  // Escuchar cuando un jugador se desconecta o sale de la sala
+  useEffect(() => {
+    if (!players || players.length === 0) return;
+
+    players.forEach(p => {
+      const online = isPlayerOnline(p);
+      if (prevPlayersOnlineRef.current[p.id] === true && online === false) {
+        setDepartedNotification(`🚪 ${p.name} ha salido de la sala`);
+        playSound('pop');
+        setTimeout(() => {
+          setDepartedNotification(null);
+        }, 5000);
+      }
+      prevPlayersOnlineRef.current[p.id] = online;
+    });
+  }, [players, isPlayerOnline, playSound]);
+
+  const handleCloseRoom = async () => {
+    try {
+      if (autoDrawInterval) {
+        clearInterval(autoDrawInterval);
+        setAutoDrawInterval(null);
+      }
+      await updateDoc(doc(db, 'games', gameId), {
+        status: 'closed',
+        closedAt: serverTimestamp(),
+        closedBy: 'host'
+      });
+      const messagesRef = collection(db, 'games', gameId, 'messages');
+      await addDoc(messagesRef, {
+        text: '🏛️ La sala ha sido clausurada y cerrada definitivamente por el anfitrión.',
+        isReaction: false,
+        isSystem: true,
+        senderName: 'Anfitrión',
+        isHost: true,
+        timestamp: serverTimestamp(),
+        createdAt: Date.now()
+      });
+      localStorage.removeItem('bingo_dealer_active_game');
+      navigate('/');
+    } catch (err) {
+      console.error('Error cerrando sala:', err);
+    }
+  };
+
+  const handleRemovePlayer = async (playerId, playerName) => {
+    try {
+      await deleteDoc(doc(db, 'games', gameId, 'players', playerId));
+      const messagesRef = collection(db, 'games', gameId, 'messages');
+      await addDoc(messagesRef, {
+        text: `ℹ️ ${playerName} ha sido retirado de la mesa por el anfitrión.`,
+        isReaction: false,
+        isSystem: true,
+        senderName: 'Sistema',
+        isHost: false,
+        timestamp: serverTimestamp(),
+        createdAt: Date.now()
+      });
+    } catch (err) {
+      console.error('Error eliminando jugador:', err);
+    }
+  };
+
+  const onlinePlayersCount = players.filter(isPlayerOnline).length;
   const maxNumber = gameState.mode === 75 ? 75 : 90;
   const called = gameState.calledNumbers || [];
   const currentNumber = called.length > 0 ? called[called.length - 1] : null;
@@ -386,6 +461,32 @@ const HostPanel = () => {
       
       {/* Comentarios en vivo estilo Streamer a un lado */}
       <LiveCommentsOverlay gameId={gameId} />
+
+      {/* Notificación flotante de salida de socio */}
+      {departedNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          backgroundColor: '#FAF4E5',
+          border: '2px solid #80141D',
+          borderRadius: '10px',
+          padding: '0.65rem 1.4rem',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          fontFamily: 'var(--font-serif)',
+          fontWeight: 'bold',
+          color: '#80141D',
+          animation: 'pop 0.3s ease'
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>🚪</span>
+          <span>{departedNotification}</span>
+        </div>
+      )}
 
       {/* HEADER DEL ANFITRIÓN */}
       <div className="card flex justify-between items-center animate-pop" style={{ 
@@ -443,8 +544,8 @@ const HostPanel = () => {
           </div>
         </div>
 
-        {/* Botón de Socios y Compartir */}
-        <div className="flex gap-3 items-center">
+        {/* Botón de Socios, Compartir y Cerrar Sala */}
+        <div className="flex gap-3 items-center" style={{ flexWrap: 'wrap' }}>
           <button 
             className="vintage-brass-plaque" 
             onClick={() => setShowPlayersModal(true)}
@@ -457,10 +558,14 @@ const HostPanel = () => {
               gap: '0.45rem',
               position: 'relative'
             }}
-            title="Ver lista de socios y estado de pago"
+            title="Ver lista de socios y estado de conexión"
           >
             <Users size={17} />
-            <span>{players.length} Socios</span>
+            <span>
+              {onlinePlayersCount === players.length 
+                ? `${players.length} Socios` 
+                : `${onlinePlayersCount}/${players.length} Socios`}
+            </span>
 
             {/* Badge si hay pagos pendientes por aprobar */}
             {paymentMode && pendingPaymentsCount > 0 && (
@@ -514,6 +619,25 @@ const HostPanel = () => {
           >
             <Share2 size={17} />
             <span className="mobile-hidden">WhatsApp</span>
+          </button>
+
+          <button 
+            className="vintage-brass-plaque" 
+            onClick={() => setShowCloseRoomModal(true)} 
+            style={{ 
+              margin: 0,
+              padding: '0.55rem 1rem',
+              fontSize: '0.95rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#80141D',
+              borderColor: '#80141D'
+            }} 
+            title="Cerrar y clausurar definitivamente esta sala"
+          >
+            <Power size={17} color="#80141D" />
+            <span className="mobile-hidden">Cerrar Sala</span>
           </button>
         </div>
       </div>
@@ -1107,37 +1231,54 @@ const HostPanel = () => {
                           <div style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '1.05rem', color: 'var(--text-vintage-dark)' }}>
                             {p.name}
                           </div>
-                          {p.role === 'spectator' ? (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
-                              Espectador en vivo
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
-                              🏆 {p.wins || 0} / {targetWins} Victorias
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 'bold',
+                              color: isPlayerOnline(p) ? '#1B5E20' : '#854D0E',
+                              backgroundColor: isPlayerOnline(p) ? '#E8F5E9' : '#FEF3C7',
+                              border: `1px solid ${isPlayerOnline(p) ? '#A5D6A7' : '#FDE68A'}`,
+                              padding: '1px 6px',
+                              borderRadius: '999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem'
+                            }}>
+                              {isPlayerOnline(p) ? '🟢 En Sala' : '⚪ Salió de la sala'}
+                            </span>
+
+                            {p.role === 'spectator' ? (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+                                Espectador
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
+                                🏆 {p.wins || 0} / {targetWins} Victorias
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Estado y Botón de Habilitación de Pago */}
-                      {p.role === 'spectator' ? (
-                        <span style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '0.3rem', 
-                          color: '#555', 
-                          fontSize: '0.8rem', 
-                          fontWeight: 'bold',
-                          backgroundColor: '#F0E6D2',
-                          padding: '3px 9px',
-                          borderRadius: '999px',
-                          border: '1px solid var(--gold-brass)'
-                        }}>
-                          <Eye size={15} /> Solo Observador
-                        </span>
-                      ) : paymentMode ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {isApproved ? (
+                      {/* Estado y Botón de Habilitación de Pago / Retirar socio */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {p.role === 'spectator' ? (
+                          <span style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.3rem', 
+                            color: '#555', 
+                            fontSize: '0.8rem', 
+                            fontWeight: 'bold',
+                            backgroundColor: '#F0E6D2',
+                            padding: '3px 9px',
+                            borderRadius: '999px',
+                            border: '1px solid var(--gold-brass)'
+                          }}>
+                            <Eye size={15} /> Observador
+                          </span>
+                        ) : paymentMode ? (
+                          isApproved ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#1B5E20', fontSize: '0.8rem', fontWeight: 'bold' }}>
                               <CheckCircle size={16} /> Inscrito al Torneo
                             </span>
@@ -1158,20 +1299,134 @@ const HostPanel = () => {
                                 className="btn btn-primary"
                                 style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
                               >
-                                Habilitar al Torneo
+                                Habilitar
                               </button>
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', color: '#1B5E20', fontWeight: 'bold' }}>
-                          🟢 Listo para Jugar
-                        </span>
-                      )}
+                          )
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', color: '#1B5E20', fontWeight: 'bold' }}>
+                            Listo
+                          </span>
+                        )}
+
+                        {/* Botón para remover socio si salió de la sala */}
+                        {!isPlayerOnline(p) && (
+                          <button
+                            onClick={() => handleRemovePlayer(p.id, p.name)}
+                            className="btn btn-secondary"
+                            style={{
+                              fontSize: '0.72rem',
+                              padding: '0.3rem 0.6rem',
+                              color: '#B71C1C',
+                              borderColor: '#B71C1C',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                            title="Eliminar socio desconectado de la sala"
+                          >
+                            <UserMinus size={13} />
+                            <span>Retirar</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE CIERRE DEFINITIVO DE SALA */}
+      {showCloseRoomModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(10, 4, 2, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem',
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div className="vintage-parchment-card animate-pop text-center" style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '2.5rem 2rem',
+            position: 'relative'
+          }}>
+            <div style={{
+              width: '68px',
+              height: '68px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 60%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+            }}>
+              🏛️
+            </div>
+
+            <h2 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '1.7rem',
+              color: 'var(--burgundy-primary)',
+              fontWeight: '900',
+              margin: '0 0 0.6rem'
+            }}>
+              Cierre Definitivo de Sala
+            </h2>
+
+            <p style={{
+              fontSize: '0.96rem',
+              color: '#4A2810',
+              lineHeight: 1.5,
+              margin: '0 auto 1.5rem',
+              maxWidth: '380px'
+            }}>
+              ¿Estás seguro de que deseas cerrar y clausurar esta sala? La partida actual se detendrá de inmediato y todos los jugadores y observadores serán notificados del cierre del torneo.
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCloseRoomModal(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  fontFamily: 'var(--font-serif)'
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-vintage-burgundy"
+                onClick={handleCloseRoom}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.75rem 1.6rem',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <Power size={18} /> Sí, Cerrar Sala
+              </button>
             </div>
           </div>
         </div>

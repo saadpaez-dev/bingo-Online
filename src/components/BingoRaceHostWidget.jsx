@@ -89,6 +89,7 @@ const BingoRaceHostWidget = ({
             const { percentage, missing, matched, total } = player.progress;
             const isWinnerCandidate = missing === 1;
             const isClose = missing <= 2 && percentage > 0;
+            const isLeft = player.isOnline === false || (player.lastSeen && Date.now() - player.lastSeen > 40000);
 
             return (
               <div
@@ -102,7 +103,8 @@ const BingoRaceHostWidget = ({
                     : '1.5px solid var(--gold-brass)',
                   borderRadius: '8px',
                   padding: '0.55rem 0.8rem',
-                  boxShadow: isMe ? '0 2px 8px rgba(197, 155, 39, 0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                  boxShadow: isMe ? '0 2px 8px rgba(197, 155, 39, 0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                  opacity: isLeft ? 0.65 : 1
                 }}
               >
                 {/* Rango, Nombre y Alerta */}
@@ -160,6 +162,20 @@ const BingoRaceHostWidget = ({
                         flexShrink: 0
                       }}>
                         TÚ
+                      </span>
+                    )}
+
+                    {isLeft && (
+                      <span style={{
+                        backgroundColor: '#78716C',
+                        color: '#fff',
+                        fontSize: '0.62rem',
+                        padding: '1px 5px',
+                        borderRadius: '999px',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }} title="Este participante ha salido de la sala">
+                        Salió
                       </span>
                     )}
                   </div>

@@ -81,7 +81,7 @@ const Home = () => {
     const unsub = onSnapshot(doc(db, 'games', savedHostGameId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.status !== 'archived') {
+        if (data.status !== 'archived' && data.status !== 'closed') {
           setActiveHostGame({ id: savedHostGameId, ...data });
         } else {
           setActiveHostGame(null);
@@ -112,7 +112,7 @@ const Home = () => {
     const unsub = onSnapshot(doc(db, 'games', savedPlayerGameId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.status !== 'archived') {
+        if (data.status !== 'archived' && data.status !== 'closed') {
           setActivePlayerGame({ id: savedPlayerGameId, ...data });
         } else {
           setActivePlayerGame(null);

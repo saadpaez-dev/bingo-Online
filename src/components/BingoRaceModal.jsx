@@ -184,6 +184,7 @@ const BingoRaceModal = ({
               const { percentage, missing, matched, total } = player.progress;
               const isClose = missing <= 2 && percentage > 0;
               const isWinnerCandidate = missing === 1;
+              const isLeft = player.isOnline === false || (player.lastSeen && Date.now() - player.lastSeen > 40000);
 
               return (
                 <div
@@ -195,7 +196,8 @@ const BingoRaceModal = ({
                     padding: '0.75rem 0.9rem',
                     boxShadow: isMe ? '0 4px 10px rgba(197, 155, 39, 0.35)' : '0 2px 5px rgba(0,0,0,0.08)',
                     transition: 'transform 0.2s',
-                    position: 'relative'
+                    position: 'relative',
+                    opacity: isLeft ? 0.65 : 1
                   }}
                 >
                   {/* Fila superior: Rango, Avatar, Nombre y Porcentaje */}
@@ -256,6 +258,19 @@ const BingoRaceModal = ({
                             fontWeight: 'bold'
                           }}>
                             TÚ
+                          </span>
+                        )}
+                        {isLeft && (
+                          <span style={{
+                            marginLeft: '0.4rem',
+                            backgroundColor: '#78716C',
+                            color: '#fff',
+                            fontSize: '0.65rem',
+                            padding: '1px 6px',
+                            borderRadius: '999px',
+                            fontWeight: 'bold'
+                          }} title="Este participante ha salido de la sala">
+                            Salió
                           </span>
                         )}
                       </div>

@@ -89,6 +89,11 @@ const PlayerPanel = () => {
           setPlayerData(pData);
           setHasJoined(true);
           localStorage.setItem('bingo_player_active_game', gameId);
+          // Reactivar presencia online en la sala
+          updateDoc(doc(db, 'games', gameId, 'players', user.uid), {
+            isOnline: true,
+            lastSeen: Date.now()
+          }).catch(() => {});
         }
       } catch (err) {
         console.error("Error auto-reconectando jugador:", err);
@@ -144,6 +149,62 @@ const PlayerPanel = () => {
     return () => unsubscribe();
   }, [userId, hasJoined, gameId, playSound]);
 
+  // Monitoreo de presencia en tiempo real (Heartbeat y detección de salida)
+  useEffect(() => {
+    if (!userId || !hasJoined || !gameId) return;
+
+    const pingOnline = () => {
+      updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        isOnline: true,
+        lastSeen: Date.now()
+      }).catch(() => {});
+    };
+
+    pingOnline();
+    const heartbeatTimer = setInterval(pingOnline, 15000);
+
+    const markOffline = () => {
+      updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        isOnline: false,
+        leftAt: Date.now()
+      }).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', markOffline);
+    window.addEventListener('pagehide', markOffline);
+
+    return () => {
+      clearInterval(heartbeatTimer);
+      window.removeEventListener('beforeunload', markOffline);
+      window.removeEventListener('pagehide', markOffline);
+    };
+  }, [userId, hasJoined, gameId]);
+
+  const handleLeaveRoom = async () => {
+    if (userId && gameId) {
+      try {
+        await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+          isOnline: false,
+          leftAt: Date.now()
+        });
+        const messagesRef = collection(db, 'games', gameId, 'messages');
+        await addDoc(messagesRef, {
+          text: `🚪 ${name || 'Un participante'} ha salido de la sala.`,
+          isReaction: false,
+          isSystem: true,
+          senderName: 'Sistema',
+          isHost: false,
+          timestamp: serverTimestamp(),
+          createdAt: Date.now()
+        });
+      } catch (err) {
+        console.warn("Error marcando salida del jugador:", err);
+      }
+    }
+    localStorage.removeItem('bingo_player_active_game');
+    navigate('/');
+  };
+
   const triggerWinAnimation = useCallback(() => {
     playSound('win');
     // Disparo único y liviano de confeti
@@ -175,7 +236,11 @@ const PlayerPanel = () => {
       isValidated: false,
       wins: 0,
       role: isSpectator ? 'spectator' : 'player',
-      paymentStatus: initialPaymentStatus
+      paymentStatus: initialPaymentStatus,
+      isOnline: true,
+      lastSeen: Date.now(),
+      joinedAt: Date.now(),
+      leftAt: null
     });
     
     localStorage.setItem('bingo_player_active_game', gameId);
@@ -318,6 +383,71 @@ const PlayerPanel = () => {
 
   if (errorMsg) return <div className="text-center mt-4" style={{ color: '#fff' }}><h3>{errorMsg}</h3></div>;
   if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
+
+  // =========================================================================
+  // ESTADO ESPECIAL: SALA CLAUSURADA O CERRADA POR EL ANFITRIÓN
+  // =========================================================================
+  if (gameState.status === 'closed') {
+    return (
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+        }}
+      >
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh' }}>
+          <div className="vintage-parchment-card animate-pop text-center" style={{ maxWidth: '480px', padding: '2.5rem 2rem' }}>
+            <FiligreeCorner position="top-left" />
+            <FiligreeCorner position="top-right" />
+            <FiligreeCorner position="bottom-left" />
+            <FiligreeCorner position="bottom-right" />
+
+            <div style={{
+              width: '75px',
+              height: '75px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 60%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.2rem',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+            }}>
+              🏛️
+            </div>
+
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', color: 'var(--burgundy-primary)', fontWeight: '900', margin: '0 0 0.6rem' }}>
+              Sala Clausurada
+            </h2>
+
+            <p style={{ fontSize: '0.96rem', color: '#4A2810', lineHeight: 1.5, margin: '0 auto 1.5rem', maxWidth: '380px' }}>
+              El anfitrión ha dado por finalizada y cerrada esta sala de juego. Gracias por participar en el torneo.
+            </p>
+
+            <button
+              className="btn-vintage-burgundy"
+              onClick={() => {
+                localStorage.removeItem('bingo_player_active_game');
+                navigate('/');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.85rem 2rem',
+                fontSize: '1.05rem',
+                cursor: 'pointer'
+              }}
+            >
+              <Home size={18} /> Volver al Inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================================
   // ESTADO 1: PANTALLA DE INGRESO Y REGISTRO AL TORNEO (!hasJoined)
@@ -731,7 +861,7 @@ const PlayerPanel = () => {
       }}>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/')}
+            onClick={handleLeaveRoom}
             className="vintage-brass-plaque"
             style={{
               margin: 0,
@@ -741,7 +871,7 @@ const PlayerPanel = () => {
               padding: '0.55rem 1rem',
               fontSize: '0.95rem'
             }}
-            title="Volver al inicio"
+            title="Salir de la sala y volver al inicio"
           >
             <Home size={17} />
             <span className="mobile-hidden">Inicio</span>
