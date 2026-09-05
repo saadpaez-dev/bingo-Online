@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, deleteDoc, getDocs, query, limit, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { MessageCircle, X, Send, Zap, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { MessageCircle, X, Send, Zap, ChevronDown, ChevronUp, Check, ArrowLeftRight, Move } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 const QUICK_CATEGORIES = {
@@ -49,13 +49,71 @@ const QUICK_CATEGORIES = {
   ]
 };
 
-const ChatBox = ({ gameId, currentUser }) => {
+const ChatBox = ({ gameId, currentUser, defaultSide = 'left' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [isPhrasesExpanded, setIsPhrasesExpanded] = useState(false);
   const [sentFeedback, setSentFeedback] = useState(false);
   const { playSound } = useSettings();
+
+  // Ubicación inteligente: 'left' por defecto para que NUNCA tape la ventana de Carrera hacia el Bingo
+  const [dockSide, setDockSide] = useState(() => {
+    return localStorage.getItem('bingo_chat_dock_side') || defaultSide || 'left';
+  });
+  const [dragPos, setDragPos] = useState(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, initialX: 0, initialY: 0 });
+
+  const toggleDockSide = (e) => {
+    e.stopPropagation();
+    const nextSide = dockSide === 'left' ? 'right' : 'left';
+    setDockSide(nextSide);
+    setDragPos(null);
+    localStorage.setItem('bingo_chat_dock_side', nextSide);
+  };
+
+  const handleMouseDownHeader = (e) => {
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    isDraggingRef.current = true;
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+
+    const panelElem = e.currentTarget.parentElement;
+    const rect = panelElem.getBoundingClientRect();
+
+    dragStartRef.current = {
+      mouseX: clientX,
+      mouseY: clientY,
+      initialX: rect.left,
+      initialY: rect.top
+    };
+
+    const handleMouseMove = (moveEvent) => {
+      if (!isDraggingRef.current) return;
+      const curX = moveEvent.clientX ?? moveEvent.touches?.[0]?.clientX;
+      const curY = moveEvent.clientY ?? moveEvent.touches?.[0]?.clientY;
+      const deltaX = curX - dragStartRef.current.mouseX;
+      const deltaY = curY - dragStartRef.current.mouseY;
+
+      const newX = Math.max(8, Math.min(window.innerWidth - 360, dragStartRef.current.initialX + deltaX));
+      const newY = Math.max(8, Math.min(window.innerHeight - 140, dragStartRef.current.initialY + deltaY));
+      setDragPos({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove);
+    window.addEventListener('touchend', handleMouseUp);
+  };
 
   // Limpieza inicial de mensajes viejos en la sala para que no queden guardados
   useEffect(() => {
@@ -97,13 +155,10 @@ const ChatBox = ({ gameId, currentUser }) => {
       playSound('draw');
 
       // Auto-limpieza de la base de datos: eliminar el mensaje de Firestore después de 12s
-      // para que solo aparezca en vivo flotando en las pantallas y no se guarde ningún historial
       setTimeout(async () => {
         try {
           await deleteDoc(docRef);
-        } catch (e) {
-          // Ya eliminado
-        }
+        } catch (e) {}
       }, 12000);
     } catch (err) {
       console.error('Error enviando mensaje:', err);
@@ -120,16 +175,51 @@ const ChatBox = ({ gameId, currentUser }) => {
   const row1 = currentPhrases.slice(0, half);
   const row2 = currentPhrases.slice(half);
 
+  // Posicionamiento dinámico del panel
+  const panelStyle = dragPos
+    ? {
+        position: 'fixed',
+        left: `${dragPos.x}px`,
+        top: `${dragPos.y}px`,
+        bottom: 'auto',
+        right: 'auto',
+        width: 'min(410px, calc(100vw - 24px))',
+        padding: 0,
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        borderRadius: '16px',
+        background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 100%)',
+        border: '3.5px solid var(--burgundy-primary)',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.75)'
+      }
+    : {
+        position: 'fixed',
+        bottom: '24px',
+        ...(dockSide === 'left' ? { left: '24px', right: 'auto' } : { right: '24px', left: 'auto' }),
+        width: 'min(410px, calc(100vw - 32px))',
+        padding: 0,
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        borderRadius: '16px',
+        background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 100%)',
+        border: '3.5px solid var(--burgundy-primary)',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.75)'
+      };
+
   return (
     <>
-      {/* Botón flotante para abrir */}
+      {/* Botón flotante para abrir (ubicado en el lado configurado, por defecto a la izquierda) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           style={{
             position: 'fixed',
             bottom: '24px',
-            right: '24px',
+            ...(dockSide === 'left' ? { left: '24px', right: 'auto' } : { right: '24px', left: 'auto' }),
             width: '60px',
             height: '60px',
             borderRadius: '50%',
@@ -147,74 +237,91 @@ const ChatBox = ({ gameId, currentUser }) => {
           }}
           onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.08)')}
           onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-          title="Enviar mensaje o frase rápida"
+          title={`Abrir Chat y Frases Rápidas (${dockSide === 'left' ? 'Lado Izquierdo' : 'Lado Derecho'})`}
           aria-label="Abrir Mensajes"
         >
           <MessageCircle size={28} />
         </button>
       )}
 
-      {/* Ventana Compacta de Envío de Mensajes (Sin historial acumulado) */}
+      {/* Ventana de Mensajes Rápidos (Con cabecera arrastrable y botón para alternar de lado) */}
       {isOpen && (
-        <div
-          className="animate-pop"
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            width: 'min(420px, calc(100vw - 32px))',
-            padding: 0,
-            zIndex: 1000,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            borderRadius: '16px',
-            background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 100%)',
-            border: '3.5px solid var(--burgundy-primary)',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.75)'
-          }}
-        >
-          {/* Encabezado */}
+        <div className="animate-pop" style={panelStyle}>
+          {/* Encabezado (Arrastrable) */}
           <div
+            onMouseDown={handleMouseDownHeader}
+            onTouchStart={handleMouseDownHeader}
             style={{
-              padding: '0.75rem 1.1rem',
+              padding: '0.65rem 1rem',
               background: 'linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy-primary) 100%)',
               color: 'var(--text-gold-emboss)',
               borderBottom: '2px solid var(--gold-brass)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              cursor: 'grab',
+              userSelect: 'none'
             }}
+            title="Mantén presionado para arrastrar la ventana a cualquier lugar de la pantalla"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <MessageCircle size={20} color="var(--gold-highlight)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <Move size={15} color="var(--gold-highlight)" style={{ opacity: 0.8 }} />
               <div>
-                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', margin: 0, fontWeight: '800' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', margin: 0, fontWeight: '800' }}>
                   Chat de la Mesa
                 </h3>
-                <span style={{ fontSize: '0.7rem', opacity: 0.85, fontFamily: 'var(--font-mono)' }}>
-                  Sala {gameId} • Mensajes en pantalla
+                <span style={{ fontSize: '0.68rem', opacity: 0.85, fontFamily: 'var(--font-mono)' }}>
+                  Sala {gameId} • Arrastrable
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid var(--gold-brass)',
-                borderRadius: '50%',
-                width: '28px',
-                height: '28px',
-                color: '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Cerrar"
-            >
-              <X size={15} />
-            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              {/* Botón para alternar lado (Izquierda / Derecha) */}
+              <button
+                type="button"
+                onClick={toggleDockSide}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  border: '1px solid var(--gold-brass)',
+                  borderRadius: '6px',
+                  padding: '3px 7px',
+                  color: 'var(--gold-highlight)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: 'bold'
+                }}
+                title={dockSide === 'left' ? 'Mover al lado derecho' : 'Mover al lado izquierdo'}
+              >
+                <ArrowLeftRight size={12} />
+                <span>{dockSide === 'left' ? 'Derecha' : 'Izquierda'}</span>
+              </button>
+
+              {/* Botón cerrar */}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.35)',
+                  border: '1px solid var(--gold-brass)',
+                  borderRadius: '50%',
+                  width: '26px',
+                  height: '26px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title="Cerrar"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
 
           {/* Feedback temporal de envío */}

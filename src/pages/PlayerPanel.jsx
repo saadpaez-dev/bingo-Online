@@ -1415,6 +1415,7 @@ const PlayerPanel = () => {
       {/* Chat Familiar en tiempo real */}
       <ChatBox
         gameId={gameId}
+        defaultSide="left"
         currentUser={{
           name: name,
           avatar: playerData?.avatar || avatar,
