@@ -337,25 +337,6 @@ const HostPanel = () => {
     }
   };
 
-  if (!gameState) {
-    return (
-      <div 
-        className="dealer-page-wrapper"
-        style={{
-          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.45) 0%, rgba(10, 4, 2, 0.8) 100%), url(${bgTable})`,
-          justifyContent: 'center'
-        }}
-      >
-        <div className="card text-center animate-pop" style={{ maxWidth: '350px', padding: '2rem' }}>
-          <span style={{ fontSize: '2.5rem' }}>🎲</span>
-          <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', marginTop: '0.75rem', color: 'var(--burgundy-primary)' }}>
-            Cargando Mesa del Anfitrión...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const isPlayerOnline = useCallback((p) => {
     if (!p) return false;
     if (p.isOnline === false) return false;
@@ -425,6 +406,25 @@ const HostPanel = () => {
       console.error('Error eliminando jugador:', err);
     }
   };
+
+  if (!gameState) {
+    return (
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.45) 0%, rgba(10, 4, 2, 0.8) 100%), url(${bgTable})`,
+          justifyContent: 'center'
+        }}
+      >
+        <div className="card text-center animate-pop" style={{ maxWidth: '350px', padding: '2rem' }}>
+          <span style={{ fontSize: '2.5rem' }}>🎲</span>
+          <p style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', marginTop: '0.75rem', color: 'var(--burgundy-primary)' }}>
+            Cargando Mesa del Anfitrión...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const onlinePlayersCount = players.filter(isPlayerOnline).length;
   const maxNumber = gameState.mode === 75 ? 75 : 90;
