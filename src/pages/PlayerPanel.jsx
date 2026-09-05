@@ -1312,6 +1312,8 @@ const PlayerPanel = () => {
                 currentLetter={currentLetter}
                 remainingCount={maxNumber - called.length}
                 gameMode={gameState.mode}
+                spinDuration={gameState.spinDuration || 3}
+                lastSpinAt={gameState.lastSpinAt || null}
                 readOnly={true}
               />
 

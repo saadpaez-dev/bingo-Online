@@ -46,6 +46,9 @@ const HostPanel = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setGameState(data);
+        if (data.spinDuration && data.spinDuration !== spinDuration) {
+          setSpinDuration(data.spinDuration);
+        }
         if (data.status === 'finished' && data.winners?.length > 0) {
           if (!winAnimationPlayedRef.current) {
             winAnimationPlayedRef.current = true;
@@ -242,8 +245,12 @@ const HostPanel = () => {
     } while (calledSet.has(nextNum));
 
     playSound('pop');
-    await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
-  }, [gameId, playSound]);
+    await updateDoc(gameRef, { 
+      calledNumbers: [...called, nextNum],
+      spinDuration: spinDuration,
+      lastSpinAt: Date.now()
+    });
+  }, [gameId, playSound, spinDuration]);
 
   const handleManualRouletteSpin = useCallback(async () => {
     if (isRouletteSpinning || autoDrawInterval !== null) return null;
@@ -270,17 +277,34 @@ const HostPanel = () => {
     } while (calledSet.has(nextNum));
 
     setIsRouletteSpinning(true);
+    playSound('pop');
 
-    // Tras el giro configurable de la ruleta, sincronizar en Firestore
-    const timeoutMs = Math.max(500, Math.round(spinDuration * 1000 - 50));
-    setTimeout(async () => {
-      playSound('pop');
-      await updateDoc(gameRef, { calledNumbers: [...called, nextNum] });
+    const now = Date.now();
+    // ¡SINCRONIZACIÓN INMEDIATA EN TIEMPO REAL!
+    // Actualizar Firestore al instante para que todos los jugadores
+    // inicien el giro en el mismo milisegundo que el anfitrión (< 60ms de latencia)
+    await updateDoc(gameRef, { 
+      calledNumbers: [...called, nextNum],
+      spinDuration: spinDuration,
+      lastSpinAt: now
+    });
+
+    setTimeout(() => {
       setIsRouletteSpinning(false);
-    }, timeoutMs);
+    }, Math.round(spinDuration * 1000));
 
     return nextNum;
   }, [gameId, playSound, isRouletteSpinning, autoDrawInterval, spinDuration]);
+
+  const handleDurationChange = useCallback(async (newDuration) => {
+    setSpinDuration(newDuration);
+    try {
+      const gameRef = doc(db, 'games', gameId);
+      await updateDoc(gameRef, { spinDuration: newDuration });
+    } catch (e) {
+      console.error('Error sincronizando duración de ruleta:', e);
+    }
+  }, [gameId]);
 
   const toggleAutoDraw = () => {
     if (autoDrawInterval) {
@@ -809,7 +833,8 @@ const HostPanel = () => {
                 remainingCount={maxNumber - called.length}
                 gameMode={gameState.mode}
                 spinDuration={spinDuration}
-                onDurationChange={setSpinDuration}
+                lastSpinAt={gameState.lastSpinAt || null}
+                onDurationChange={handleDurationChange}
               />
 
               {/* Controles de velocidad y Sorteo Automático */}

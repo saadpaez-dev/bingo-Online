@@ -47,6 +47,7 @@ const VintageRoulette = ({
   remainingCount,
   gameMode = 75,
   spinDuration = 3,
+  lastSpinAt = null,
   onDurationChange,
   readOnly = false
 }) => {
@@ -119,30 +120,46 @@ const VintageRoulette = ({
     } catch (e) {}
   };
 
-  // Función reutilizable para ejecutar la física y sonido de giro
-  const triggerSpinAnimation = (nextNum) => {
+  // Función reutilizable para ejecutar la física y sonido de giro con sincronización de red
+  const triggerSpinAnimation = (nextNum, overrideDuration = null, startTimestamp = null) => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
     }
     setIsAnimating(true);
     setRevealedBall(null);
+    prevNumberRef.current = nextNum;
 
     const letLetter = getBallLetter(nextNum, gameMode);
     const targetIndex = pockets.indexOf(nextNum);
+    if (targetIndex === -1) {
+      setIsAnimating(false);
+      return;
+    }
 
+    const currentDur = overrideDuration || spinDuration;
     const desiredMod = ((- (targetIndex * sliceDeg + sliceDeg / 2)) % 360 + 360) % 360;
     const currentMod = ((rotation % 360) + 360) % 360;
     let diff = desiredMod - currentMod;
     if (diff <= 0) diff += 360;
 
-    const extraTurns = Math.max(3, Math.round(spinDuration * 1.8)) * 360;
+    const extraTurns = Math.max(3, Math.round(currentDur * 1.8)) * 360;
     const targetRot = rotation + extraTurns + diff;
-    const duration = Math.max(500, Math.round(spinDuration * 1000 - 50));
-    const startTime = performance.now();
+    const duration = Math.max(500, Math.round(currentDur * 1000 - 50));
+
+    // Compensar milisegundos de viaje de red para sincronización exacta entre anfitrión y jugadores
+    let initialElapsed = 0;
+    if (startTimestamp) {
+      const pingMs = Date.now() - startTimestamp;
+      if (pingMs > 0 && pingMs < 350) {
+        initialElapsed = pingMs;
+      }
+    }
+
+    const startTime = performance.now() - initialElapsed;
     const initialRot = rotation;
 
-    let clickInterval = Math.max(25, 45 / (spinDuration / 3));
-    lastClickTimeRef.current = startTime;
+    let clickInterval = Math.max(25, 45 / (currentDur / 3));
+    lastClickTimeRef.current = performance.now();
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -161,7 +178,7 @@ const VintageRoulette = ({
       if (currentTime - lastClickTimeRef.current > clickInterval) {
         playClickSound(Math.max(0.08, 0.3 * (1 - progress * 0.8)));
         lastClickTimeRef.current = currentTime;
-        clickInterval = 35 + Math.pow(progress, 2) * (spinDuration * 85);
+        clickInterval = 35 + Math.pow(progress, 2) * (currentDur * 85);
       }
 
       if (progress < 1) {
@@ -204,15 +221,14 @@ const VintageRoulette = ({
       return;
     }
 
-    // Modo Jugador / Observador (readOnly): Si llega una nueva bola del Dealer, girar con animación
-    if (readOnly && prevNumberRef.current !== currentNumber) {
-      prevNumberRef.current = currentNumber;
-      triggerSpinAnimation(currentNumber);
+    // Si llega un nuevo número desde la mesa (sea jugador o anfitrión) y no está en giro:
+    if (prevNumberRef.current !== currentNumber && !isAnimating) {
+      triggerSpinAnimation(currentNumber, spinDuration, lastSpinAt);
       return;
     }
 
-    // Si ya terminó de animar o no está en readOnly
-    if (!isAnimating) {
+    // Si no está animando y la bola revelada aún no coincide con currentNumber
+    if (!isAnimating && (!revealedBall || revealedBall.number !== currentNumber)) {
       prevNumberRef.current = currentNumber;
       const idx = pockets.indexOf(currentNumber);
       if (idx !== -1) {
@@ -221,7 +237,7 @@ const VintageRoulette = ({
       }
       setRevealedBall({ number: currentNumber, letter: currentLetter });
     }
-  }, [currentNumber, currentLetter, readOnly, isAnimating, pockets, sliceDeg]);
+  }, [currentNumber, currentLetter, isAnimating, pockets, sliceDeg, spinDuration, lastSpinAt, revealedBall]);
 
   // Manejar el giro de ruleta manual (Host)
   const handleTriggerSpin = async () => {
@@ -230,14 +246,14 @@ const VintageRoulette = ({
     setIsAnimating(true);
     setRevealedBall(null);
 
-    // Obtener el número sorteado desde el Host
+    // Obtener el número sorteado desde el Host (que a su vez actualiza Firestore de inmediato)
     const nextNum = await onSpin();
     if (!nextNum) {
       setIsAnimating(false);
       return;
     }
 
-    triggerSpinAnimation(nextNum);
+    triggerSpinAnimation(nextNum, spinDuration, Date.now());
   };
 
   useEffect(() => {
