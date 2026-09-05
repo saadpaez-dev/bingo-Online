@@ -457,7 +457,7 @@ const HostPanel = () => {
         backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
       }}
     >
-      <div className="app-container" style={{ maxWidth: '1440px', position: 'relative', width: '100%' }}>
+      <div className="app-container host-app-container" style={{ position: 'relative' }}>
       
       {/* Comentarios en vivo estilo Streamer a un lado */}
       <LiveCommentsOverlay gameId={gameId} />
@@ -490,12 +490,12 @@ const HostPanel = () => {
 
       {/* HEADER DEL ANFITRIÓN */}
       <div className="card flex justify-between items-center animate-pop" style={{ 
-        padding: '1rem 1.75rem',
+        padding: '1.25rem 2rem',
         border: '3px solid var(--burgundy-primary)',
-        gap: '1rem',
+        gap: '1.25rem',
         flexWrap: 'wrap'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem' }}>
           <button 
             onClick={() => navigate('/')} 
             className="vintage-brass-plaque"
@@ -503,21 +503,21 @@ const HostPanel = () => {
               margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.55rem 1rem',
-              fontSize: '0.95rem'
+              gap: '0.5rem',
+              padding: '0.65rem 1.15rem',
+              fontSize: '1rem'
             }}
             title="Volver a la página principal"
           >
-            <Home size={17} />
+            <Home size={18} />
             <span>Inicio</span>
           </button>
 
           <div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.85rem', margin: 0, fontWeight: '900', color: 'var(--text-vintage-dark)' }}>
               Mesa del Anfitrión
             </h2>
-            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', flexWrap: 'wrap' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-vintage-muted)', display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.95rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
               <span>Club Clásico</span>
               <span>•</span>
               <span style={{ color: 'var(--burgundy-primary)', fontWeight: 'bold' }}>
@@ -533,15 +533,15 @@ const HostPanel = () => {
         
         {/* Código de Sala */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-serif)', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-serif)', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 'bold' }}>
             Código de Sala
           </div>
           <div style={{ 
-            fontSize: '2.5rem', 
+            fontSize: '2.8rem', 
             fontWeight: '900', 
             fontFamily: 'var(--font-mono)', 
             color: 'var(--burgundy-primary)', 
-            letterSpacing: '5px', 
+            letterSpacing: '6px', 
             lineHeight: 1 
           }}>
             {gameId}
@@ -650,25 +650,25 @@ const HostPanel = () => {
       <div 
         style={{
           background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: '2px solid var(--gold-brass)',
-          padding: '0.75rem 1.25rem',
+          padding: '0.95rem 1.6rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '0.75rem',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+          gap: '1rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Trophy size={22} color="#8C6B23" />
-          <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '0.95rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Trophy size={24} color="#8C6B23" />
+          <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '1.05rem' }}>
             Torneo Familiar: {targetWins} Victorias para el Gran Premio
           </span>
           <span style={{
-            fontSize: '0.78rem',
-            padding: '2px 8px',
+            fontSize: '0.82rem',
+            padding: '3px 10px',
             borderRadius: '999px',
             backgroundColor: paymentMode ? '#7E252D' : '#2E7D32',
             color: '#FFF',
@@ -680,21 +680,21 @@ const HostPanel = () => {
         </div>
 
         {/* Podio rápido de líderes */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {leaderboard.slice(0, 3).map((p, i) => (
             <div 
               key={p.id}
               style={{
-                fontSize: '0.8rem',
+                fontSize: '0.85rem',
                 fontFamily: 'var(--font-serif)',
                 fontWeight: '700',
-                padding: '2px 8px',
+                padding: '3px 10px',
                 borderRadius: '6px',
                 backgroundColor: '#FFF',
                 border: '1px solid var(--gold-brass)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.3rem'
+                gap: '0.35rem'
               }}
             >
               <span>{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
@@ -720,18 +720,18 @@ const HostPanel = () => {
         {/* PANEL IZQUIERDO: SORTEO Y BOLA ACTIVA */}
         <div className="host-controls-col">
           <div className="card animate-pop flex flex-col items-center justify-center" style={{ 
-            padding: '2rem 1.5rem', 
+            padding: '2.5rem 2rem', 
             border: '3px solid var(--burgundy-primary)',
-            minHeight: '380px'
+            minHeight: '440px'
           }}>
             
             {gameState.status === 'waiting' && (
               <div className="text-center" style={{ width: '100%' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: '0.5rem' }}>🎟️</div>
-                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.85rem', marginBottom: '0.3rem', color: 'var(--text-vintage-dark)', fontWeight: '900' }}>
+                <div style={{ fontSize: '4.5rem', marginBottom: '0.75rem' }}>🎟️</div>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.3rem', marginBottom: '0.5rem', color: 'var(--text-vintage-dark)', fontWeight: '900' }}>
                   Mesa Lista - Ronda {currentRound}
                 </h2>
-                <p className="vintage-subtitle" style={{ marginBottom: '1.25rem', fontSize: '1rem' }}>
+                <p className="vintage-subtitle" style={{ marginBottom: '1.75rem', fontSize: '1.15rem' }}>
                   {players.length === 0 
                     ? 'Esperando a los participantes...' 
                     : `${players.length} socios en la mesa listos para el sorteo.`
@@ -766,9 +766,18 @@ const HostPanel = () => {
                   className="btn-vintage-burgundy" 
                   onClick={startGame} 
                   disabled={players.length === 0}
-                  style={{ width: '100%', maxWidth: '340px', fontSize: '1.1rem', padding: '0.85rem 1.5rem' }}
+                  style={{ 
+                    width: '100%', 
+                    maxWidth: '440px', 
+                    fontSize: '1.25rem', 
+                    padding: '1.05rem 2rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.6rem'
+                  }}
                 >
-                  <Play size={22} /> Iniciar Ronda {currentRound} ({gameState.mode} Bolas)
+                  <Play size={24} /> Iniciar Ronda {currentRound} ({gameState.mode} Bolas)
                 </button>
               </div>
             )}
@@ -944,33 +953,33 @@ const HostPanel = () => {
             display: 'flex', 
             flexDirection: 'column',
             border: '3px solid var(--burgundy-primary)',
-            padding: '1.25rem'
+            padding: '1.5rem'
           }}>
             <div className="flex justify-between items-center mb-3">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', fontWeight: '900', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.55rem', fontWeight: '900', margin: 0 }}>
                   Tablero Maestro
                 </h3>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
                   ({called.length} extraídas de {maxNumber})
                 </span>
               </div>
-              <span className="vintage-brass-plaque" style={{ padding: '0.25rem 0.75rem', fontSize: '0.82rem', margin: 0 }}>
+              <span className="vintage-brass-plaque" style={{ padding: '0.35rem 0.95rem', fontSize: '0.9rem', margin: 0 }}>
                 Faltan {maxNumber - called.length} bolas
               </span>
             </div>
             
             <div style={{
               flex: 1,
-              padding: '0.85rem',
+              padding: '1rem 1.25rem',
               background: 'radial-gradient(circle at center, #3A1C11 0%, #200D07 100%)',
-              borderRadius: '10px',
+              borderRadius: '12px',
               border: '2px solid var(--gold-antique)',
-              boxShadow: 'inset 0 0 18px rgba(0,0,0,0.85)',
+              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.85)',
               overflowX: 'auto'
             }}>
               {gameState.mode === 75 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: '640px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '680px' }}>
                   {[
                     { letter: 'B', range: [1, 15] },
                     { letter: 'I', range: [16, 30] },
@@ -980,24 +989,25 @@ const HostPanel = () => {
                   ].map(({ letter, range }) => (
                     <div key={letter} style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: '44px repeat(15, 1fr)', 
-                      gap: '0.25rem',
+                      gridTemplateColumns: 'clamp(46px, 3.2vw, 56px) repeat(15, 1fr)', 
+                      gap: '0.35rem',
                       alignItems: 'center'
                     }}>
                       {/* Letra de la Fila */}
                       <div style={{
                         aspectRatio: '1',
+                        minHeight: '44px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1.25rem',
+                        fontSize: 'clamp(1.2rem, 1.6vw, 1.7rem)',
                         fontFamily: 'var(--font-serif)',
                         fontWeight: '900',
-                        borderRadius: '7px',
+                        borderRadius: '8px',
                         background: 'radial-gradient(circle at 35% 30%, #8C222C 0%, #5C1D24 100%)',
                         color: 'var(--gold-primary)',
                         border: '2px solid var(--gold-brass)',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.4)',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
                         textShadow: '0 1px 2px rgba(0,0,0,0.8)'
                       }}>
                         {letter}
@@ -1010,13 +1020,14 @@ const HostPanel = () => {
                         return (
                           <div key={num} style={{
                             aspectRatio: '1',
+                            minHeight: '44px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '0.92rem',
+                            fontSize: 'clamp(0.95rem, 1.25vw, 1.35rem)',
                             fontFamily: 'var(--font-serif)',
                             fontWeight: '800',
-                            borderRadius: '6px',
+                            borderRadius: '7px',
                             background: isLast 
                               ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
                               : isCalled 
@@ -1047,24 +1058,24 @@ const HostPanel = () => {
                   ))}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '550px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: '600px' }}>
                   {Array.from({ length: 9 }, (_, r) => ({ rowNum: r + 1, start: r * 10 + 1, end: (r + 1) * 10 })).map(({ rowNum, start, end }) => (
                     <div key={rowNum} style={{ 
                       display: 'grid', 
-                      gridTemplateColumns: '50px repeat(10, 1fr)', 
-                      gap: '0.25rem',
+                      gridTemplateColumns: 'clamp(54px, 3.6vw, 68px) repeat(10, 1fr)', 
+                      gap: '0.35rem',
                       alignItems: 'center'
                     }}>
                       <div style={{
                         height: '100%',
-                        minHeight: '30px',
+                        minHeight: '44px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.72rem',
+                        fontSize: 'clamp(0.78rem, 0.95vw, 1rem)',
                         fontFamily: 'var(--font-serif)',
                         fontWeight: '900',
-                        borderRadius: '5px',
+                        borderRadius: '7px',
                         background: 'radial-gradient(circle at 35% 30%, #8C222C 0%, #5C1D24 100%)',
                         color: 'var(--gold-primary)',
                         border: '1.5px solid var(--gold-brass)',
@@ -1079,13 +1090,14 @@ const HostPanel = () => {
                         return (
                           <div key={num} style={{
                             aspectRatio: '1',
+                            minHeight: '44px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '0.92rem',
+                            fontSize: 'clamp(0.95rem, 1.35vw, 1.45rem)',
                             fontFamily: 'var(--font-serif)',
                             fontWeight: '800',
-                            borderRadius: '5px',
+                            borderRadius: '7px',
                             background: isLast 
                               ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
                               : isCalled 
