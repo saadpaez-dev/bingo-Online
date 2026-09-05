@@ -1310,6 +1310,7 @@ const PlayerPanel = () => {
               <VintageRoulette
                 currentNumber={currentNumber}
                 currentLetter={currentLetter}
+                activeSpin={gameState.activeSpin || null}
                 remainingCount={maxNumber - called.length}
                 gameMode={gameState.mode}
                 spinDuration={gameState.spinDuration || 3}

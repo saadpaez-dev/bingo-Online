@@ -101,7 +101,7 @@ const HostPanel = () => {
     playSound('start');
     roundEndingRef.current = false;
     winAnimationPlayedRef.current = false;
-    await updateDoc(doc(db, 'games', gameId), { status: 'playing', calledNumbers: [] });
+    await updateDoc(doc(db, 'games', gameId), { status: 'playing', calledNumbers: [], activeSpin: null });
   };
 
   const endRound = async (winners = []) => {
@@ -117,7 +117,8 @@ const HostPanel = () => {
     // 1. Cambiar estado a finished para frenar cualquier llamada concurrente
     await updateDoc(doc(db, 'games', gameId), {
       status: 'finished',
-      winners: winners.map(w => w.name)
+      winners: winners.map(w => w.name),
+      activeSpin: null
     });
 
     // 2. Incrementar +1 victoria exactamente una vez por ganador
@@ -223,6 +224,8 @@ const HostPanel = () => {
   };
 
   const drawNumber = useCallback(async () => {
+    if (isRouletteSpinning) return;
+
     const gameRef = doc(db, 'games', gameId);
     const snap = await getDoc(gameRef);
     if (!snap.exists()) return;
@@ -244,13 +247,32 @@ const HostPanel = () => {
       nextNum = Math.floor(Math.random() * maxNumber) + 1;
     } while (calledSet.has(nextNum));
 
-    playSound('pop');
+    setIsRouletteSpinning(true);
+    const now = Date.now();
+
+    // 1. Emitir activeSpin de inmediato para que la ruleta gire en todos los clientes al mismo tiempo
+    // ¡NO agregamos todavía nextNum a calledNumbers para no marcar el tablero antes de tiempo!
     await updateDoc(gameRef, { 
-      calledNumbers: [...called, nextNum],
+      activeSpin: {
+        number: nextNum,
+        spinDuration: spinDuration,
+        startedAt: now
+      },
       spinDuration: spinDuration,
-      lastSpinAt: Date.now()
+      lastSpinAt: now
     });
-  }, [gameId, playSound, spinDuration]);
+
+    // 2. Esperar a que la ruleta termine físicamente de girar para marcar en el tablero
+    const durationMs = Math.round(spinDuration * 1000);
+    setTimeout(async () => {
+      playSound('pop');
+      await updateDoc(gameRef, { 
+        calledNumbers: [...called, nextNum],
+        activeSpin: null
+      });
+      setIsRouletteSpinning(false);
+    }, durationMs);
+  }, [gameId, playSound, spinDuration, isRouletteSpinning, endRound]);
 
   const handleManualRouletteSpin = useCallback(async () => {
     if (isRouletteSpinning || autoDrawInterval !== null) return null;
@@ -277,24 +299,33 @@ const HostPanel = () => {
     } while (calledSet.has(nextNum));
 
     setIsRouletteSpinning(true);
-    playSound('pop');
-
     const now = Date.now();
-    // ¡SINCRONIZACIÓN INMEDIATA EN TIEMPO REAL!
-    // Actualizar Firestore al instante para que todos los jugadores
-    // inicien el giro en el mismo milisegundo que el anfitrión (< 60ms de latencia)
+
+    // 1. Iniciar giro en simultáneo para Anfitrión y Jugadores (CERO LATENCIA)
+    // El número solo se emite en activeSpin, no en calledNumbers, para que el tablero NO lo marque antes de parar
     await updateDoc(gameRef, { 
-      calledNumbers: [...called, nextNum],
+      activeSpin: {
+        number: nextNum,
+        spinDuration: spinDuration,
+        startedAt: now
+      },
       spinDuration: spinDuration,
       lastSpinAt: now
     });
 
-    setTimeout(() => {
+    // 2. Al frenar la ruleta, oficializar el número en el Tablero Maestro y en los cartones
+    const durationMs = Math.round(spinDuration * 1000);
+    setTimeout(async () => {
+      playSound('pop');
+      await updateDoc(gameRef, { 
+        calledNumbers: [...called, nextNum],
+        activeSpin: null
+      });
       setIsRouletteSpinning(false);
-    }, Math.round(spinDuration * 1000));
+    }, durationMs);
 
     return nextNum;
-  }, [gameId, playSound, isRouletteSpinning, autoDrawInterval, spinDuration]);
+  }, [gameId, playSound, isRouletteSpinning, autoDrawInterval, spinDuration, endRound]);
 
   const handleDurationChange = useCallback(async (newDuration) => {
     setSpinDuration(newDuration);
@@ -828,6 +859,7 @@ const HostPanel = () => {
               <VintageRoulette
                 currentNumber={currentNumber}
                 currentLetter={currentLetter}
+                activeSpin={gameState.activeSpin || null}
                 onSpin={handleManualRouletteSpin}
                 disabled={autoDrawInterval !== null || isRouletteSpinning}
                 remainingCount={maxNumber - called.length}

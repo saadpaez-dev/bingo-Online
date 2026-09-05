@@ -43,6 +43,7 @@ const VintageRoulette = ({
   onSpin,
   currentNumber,
   currentLetter,
+  activeSpin = null,
   disabled,
   remainingCount,
   gameMode = 75,
@@ -65,6 +66,7 @@ const VintageRoulette = ({
   const animFrameRef = useRef(null);
   const lastClickTimeRef = useRef(0);
   const prevNumberRef = useRef(null);
+  const lastActiveSpinIdRef = useRef(null);
 
   // Inicializar Web Audio context para clics mecánicos procedurales
   const getAudioContext = () => {
@@ -201,15 +203,28 @@ const VintageRoulette = ({
     animFrameRef.current = requestAnimationFrame(animate);
   };
 
-  // Posicionar o girar automáticamente cuando cambia currentNumber
+  // Posicionar o girar automáticamente cuando hay activeSpin o cambia currentNumber
   useEffect(() => {
+    // 1. Si hay un giro activo transmitido en tiempo real (activeSpin)
+    if (activeSpin && activeSpin.number && activeSpin.startedAt) {
+      if (lastActiveSpinIdRef.current !== activeSpin.startedAt) {
+        lastActiveSpinIdRef.current = activeSpin.startedAt;
+        triggerSpinAnimation(
+          activeSpin.number, 
+          activeSpin.spinDuration || spinDuration, 
+          activeSpin.startedAt
+        );
+      }
+      return;
+    }
+
     if (!currentNumber) {
       setRevealedBall(null);
       prevNumberRef.current = null;
       return;
     }
 
-    // Primera carga o reconexión: colocación directa
+    // 2. Primera carga o reconexión: colocación directa sin girar
     if (prevNumberRef.current === null) {
       prevNumberRef.current = currentNumber;
       const idx = pockets.indexOf(currentNumber);
@@ -221,13 +236,13 @@ const VintageRoulette = ({
       return;
     }
 
-    // Si llega un nuevo número desde la mesa (sea jugador o anfitrión) y no está en giro:
+    // 3. Si llega un nuevo número fuera de activeSpin y no está girando
     if (prevNumberRef.current !== currentNumber && !isAnimating) {
       triggerSpinAnimation(currentNumber, spinDuration, lastSpinAt);
       return;
     }
 
-    // Si no está animando y la bola revelada aún no coincide con currentNumber
+    // 4. Si no está animando y la bola revelada aún no coincide con currentNumber
     if (!isAnimating && (!revealedBall || revealedBall.number !== currentNumber)) {
       prevNumberRef.current = currentNumber;
       const idx = pockets.indexOf(currentNumber);
@@ -237,23 +252,14 @@ const VintageRoulette = ({
       }
       setRevealedBall({ number: currentNumber, letter: currentLetter });
     }
-  }, [currentNumber, currentLetter, isAnimating, pockets, sliceDeg, spinDuration, lastSpinAt, revealedBall]);
+  }, [activeSpin, currentNumber, currentLetter, isAnimating, pockets, sliceDeg, spinDuration, lastSpinAt, revealedBall]);
 
   // Manejar el giro de ruleta manual (Host)
   const handleTriggerSpin = async () => {
     if (readOnly || disabled || isSpinning || isAnimating) return;
 
-    setIsAnimating(true);
-    setRevealedBall(null);
-
-    // Obtener el número sorteado desde el Host (que a su vez actualiza Firestore de inmediato)
-    const nextNum = await onSpin();
-    if (!nextNum) {
-      setIsAnimating(false);
-      return;
-    }
-
-    triggerSpinAnimation(nextNum, spinDuration, Date.now());
+    // Llamar a onSpin() del Host, que genera el número y emite activeSpin de inmediato a Firestore
+    await onSpin();
   };
 
   useEffect(() => {
