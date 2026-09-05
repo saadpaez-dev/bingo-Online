@@ -1054,25 +1054,33 @@ const HostPanel = () => {
                             fontWeight: '800',
                             borderRadius: '7px',
                             background: isLast 
-                              ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
+                              ? 'radial-gradient(circle at 35% 30%, #9E242F 0%, #691720 60%, #350A0E 100%)' 
                               : isCalled 
-                              ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
-                              : 'rgba(255, 255, 255, 0.05)',
-                            color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.35)',
+                              ? 'radial-gradient(circle at center, #2E7D32 0%, #14532D 100%)' 
+                              : 'linear-gradient(180deg, #3A1C12 0%, #220E07 100%)',
+                            color: isLast 
+                              ? '#FFF2C6' 
+                              : isCalled 
+                              ? '#FFFFFF' 
+                              : '#E8D1A7',
                             border: isLast 
-                              ? '2px solid var(--gold-primary)' 
+                              ? '2.5px solid var(--gold-primary)' 
                               : isCalled 
-                              ? '1.5px solid #81C784' 
-                              : '1px solid rgba(140, 107, 35, 0.18)',
-                            opacity: isCalled ? 1 : 0.6,
-                            transform: isLast ? 'scale(1.15)' : 'scale(1)',
+                              ? '2px solid #86EFAC' 
+                              : '1.5px solid rgba(212, 175, 55, 0.42)',
+                            opacity: 1,
+                            transform: isLast ? 'scale(1.15)' : isCalled ? 'scale(1.02)' : 'scale(1)',
                             zIndex: isLast ? 10 : 1,
                             boxShadow: isLast 
-                              ? '0 0 14px rgba(212, 175, 55, 0.95)' 
+                              ? '0 0 16px rgba(212, 175, 55, 0.95), 0 3px 6px rgba(0,0,0,0.6)' 
                               : isCalled 
-                              ? '0 2px 4px rgba(0,0,0,0.4)' 
-                              : 'none',
-                            textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
+                              ? '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3)' 
+                              : 'inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.3)',
+                            textShadow: isLast 
+                              ? '0 2px 4px rgba(0,0,0,0.9)' 
+                              : isCalled 
+                              ? '0 1px 3px rgba(0,0,0,0.9)' 
+                              : '0 1px 2px rgba(0,0,0,0.95)',
                             transition: 'all 0.2s ease'
                           }}>
                             {num}
@@ -1124,25 +1132,34 @@ const HostPanel = () => {
                             fontWeight: '800',
                             borderRadius: '7px',
                             background: isLast 
-                              ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 60%, #3B1015 100%)' 
+                              ? 'radial-gradient(circle at 35% 30%, #9E242F 0%, #691720 60%, #350A0E 100%)' 
                               : isCalled 
-                              ? 'radial-gradient(circle at center, #2E7D32 0%, #1B5E20 100%)' 
-                              : 'rgba(255, 255, 255, 0.05)',
-                            color: isCalled ? 'var(--text-gold-emboss)' : 'rgba(212, 175, 55, 0.35)',
+                              ? 'radial-gradient(circle at center, #2E7D32 0%, #14532D 100%)' 
+                              : 'linear-gradient(180deg, #3A1C12 0%, #220E07 100%)',
+                            color: isLast 
+                              ? '#FFF2C6' 
+                              : isCalled 
+                              ? '#FFFFFF' 
+                              : '#E8D1A7',
                             border: isLast 
-                              ? '2px solid var(--gold-primary)' 
+                              ? '2.5px solid var(--gold-primary)' 
                               : isCalled 
-                              ? '1.5px solid #81C784' 
-                              : '1px solid rgba(140, 107, 35, 0.18)',
-                            opacity: isCalled ? 1 : 0.6,
-                            transform: isLast ? 'scale(1.15)' : 'scale(1)',
+                              ? '2px solid #86EFAC' 
+                              : '1.5px solid rgba(212, 175, 55, 0.42)',
+                            opacity: 1,
+                            transform: isLast ? 'scale(1.15)' : isCalled ? 'scale(1.02)' : 'scale(1)',
                             zIndex: isLast ? 10 : 1,
                             boxShadow: isLast 
-                              ? '0 0 14px rgba(212, 175, 55, 0.95)' 
+                              ? '0 0 16px rgba(212, 175, 55, 0.95), 0 3px 6px rgba(0,0,0,0.6)' 
                               : isCalled 
-                              ? '0 2px 4px rgba(0,0,0,0.4)' 
-                              : 'none',
-                            textShadow: isCalled ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
+                              ? '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3)' 
+                              : 'inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.3)',
+                            textShadow: isLast 
+                              ? '0 2px 4px rgba(0,0,0,0.9)' 
+                              : isCalled 
+                              ? '0 1px 3px rgba(0,0,0,0.9)' 
+                              : '0 1px 2px rgba(0,0,0,0.95)',
+                            transition: 'all 0.2s ease'
                           }}>
                             {num}
                           </div>
