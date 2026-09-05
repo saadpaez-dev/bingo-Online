@@ -743,5 +743,64 @@ button.vintage-brass-plaque:focus-visible {
   }
 }
 
+/* =========================================================
+   PANEL PRINCIPAL ADAPTATIVO (AMPLIADO EN PC / ESCRITORIO)
+   ========================================================= */
+.vintage-parchment-card.home-parchment-card {
+  width: 100%;
+  max-width: 520px;
+  transition: max-width 0.3s ease, padding 0.3s ease;
+}
+
+.home-two-col-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.home-two-col-left,
+.home-two-col-right {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-mobile-divider {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+@media (min-width: 900px) {
+  .vintage-parchment-card.home-parchment-card {
+    max-width: 980px;
+    padding: 2rem 2.75rem;
+  }
+
+  .home-two-col-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.25rem;
+    align-items: stretch;
+    text-align: left;
+    margin-top: 0.5rem;
+  }
+
+  .home-two-col-left {
+    padding-right: 2rem;
+    border-right: 1.5px dashed rgba(197, 155, 39, 0.45);
+    justify-content: flex-start;
+  }
+
+  .home-two-col-right {
+    padding-left: 0.5rem;
+    justify-content: flex-start;
+  }
+
+  .home-mobile-divider {
+    display: none;
+  }
+}
+
 
 

@@ -313,7 +313,7 @@ const Home = () => {
     >
       
       {/* TARJETA DE PERGAMINO VINTAGE */}
-      <div className="vintage-parchment-card animate-pop">
+      <div className="vintage-parchment-card home-parchment-card animate-pop">
         
         <FiligreeCorner position="top-left" />
         <FiligreeCorner position="top-right" />
@@ -540,458 +540,467 @@ const Home = () => {
           </div>
         )}
 
-        {/* SECCIÓN CREAR PARTIDA */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div className="vintage-section-header">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C59B27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="vintage-section-icon">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-            <span>Crear Partida</span>
-          </div>
+        {/* GRILLA RESPONSIVA DE DOS COLUMNAS (PC AMPLIO / MÓVIL EN FILA) */}
+        <div className="home-two-col-grid">
 
-          {/* Bolas 3D de madera tallada (75 & 90) */}
-          <div className="vintage-balls-selector">
-            <div 
-              className={`vintage-ball-wrapper ${gameMode === 75 ? 'active' : ''}`}
-              onClick={() => { setGameMode(75); playSound('draw'); }}
-            >
-              <div className="vintage-wood-sphere">
-                <span className="vintage-wood-number">75</span>
-              </div>
-              <div className="vintage-brass-plaque">
-                Bolas (Letras)
-              </div>
+          {/* COLUMNA IZQUIERDA: CREAR PARTIDA */}
+          <div className="home-two-col-left">
+            <div className="vintage-section-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C59B27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="vintage-section-icon">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span>Crear Partida</span>
             </div>
 
-            <div 
-              className={`vintage-ball-wrapper ${gameMode === 90 ? 'active' : ''}`}
-              onClick={() => { setGameMode(90); playSound('draw'); }}
-            >
-              <div className="vintage-wood-sphere">
-                <span className="vintage-wood-number">90</span>
-              </div>
-              <div className="vintage-brass-plaque">
-                Bolas (Cartón)
-              </div>
-            </div>
-          </div>
-
-          {/* Opciones de Torneo y Pago (Expandible) */}
-          <div style={{ marginBottom: '1.25rem', padding: '0 0.5rem' }}>
-            <button
-              type="button"
-              onClick={() => setShowAdvancedRules(prev => !prev)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--burgundy-primary)',
-                fontFamily: 'var(--font-serif)',
-                fontWeight: '800',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                textDecoration: 'underline'
-              }}
-            >
-              <Trophy size={16} />
-              {showAdvancedRules ? 'Ocultar Reglas de Torneo & Pago' : '⚙️ Configurar Torneo & Modalidad de Pago'}
-              {showAdvancedRules ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-
-            {showAdvancedRules && (
+            {/* Bolas 3D de madera tallada (75 & 90) */}
+            <div className="vintage-balls-selector" style={{ margin: '0.75rem auto 1rem' }}>
               <div 
-                className="animate-pop"
+                className={`vintage-ball-wrapper ${gameMode === 75 ? 'active' : ''}`}
+                onClick={() => { setGameMode(75); playSound('draw'); }}
+              >
+                <div className="vintage-wood-sphere">
+                  <span className="vintage-wood-number">75</span>
+                </div>
+                <div className="vintage-brass-plaque">
+                  Bolas (Letras)
+                </div>
+              </div>
+
+              <div 
+                className={`vintage-ball-wrapper ${gameMode === 90 ? 'active' : ''}`}
+                onClick={() => { setGameMode(90); playSound('draw'); }}
+              >
+                <div className="vintage-wood-sphere">
+                  <span className="vintage-wood-number">90</span>
+                </div>
+                <div className="vintage-brass-plaque">
+                  Bolas (Cartón)
+                </div>
+              </div>
+            </div>
+
+            {/* Opciones de Torneo y Pago (Expandible) */}
+            <div style={{ marginBottom: '1.25rem', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedRules(prev => !prev)}
                 style={{
-                  marginTop: '0.75rem',
-                  padding: '1rem',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
-                  border: '1.5px solid var(--gold-brass)',
-                  textAlign: 'left',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--burgundy-primary)',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: '800',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  textDecoration: 'underline'
                 }}
               >
-                {/* Meta de Victorias */}
-                <div>
-                  <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
-                    🏆 Meta del Torneo (El primero que gane):
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {[
-                      { val: 1, label: '1 Ronda' },
-                      { val: 3, label: '3 Rondas (Torneo)' },
-                      { val: 5, label: '5 Rondas (Gran Final)' }
-                    ].map(opt => (
+                <Trophy size={15} />
+                {showAdvancedRules ? 'Ocultar Reglas de Torneo & Pago' : '⚙️ Configurar Torneo & Modalidad de Pago'}
+                {showAdvancedRules ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </button>
+
+              {showAdvancedRules && (
+                <div 
+                  className="animate-pop"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '1rem',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',
+                    border: '1.5px solid var(--gold-brass)',
+                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem'
+                  }}
+                >
+                  {/* Meta de Victorias */}
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
+                      🏆 Meta del Torneo (El primero que gane):
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      {[
+                        { val: 1, label: '1 Ronda' },
+                        { val: 3, label: '3 Rondas (Torneo)' },
+                        { val: 5, label: '5 Rondas (Gran Final)' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setTargetWins(opt.val)}
+                          style={{
+                            flex: 1,
+                            padding: '0.4rem 0.2rem',
+                            fontSize: '0.75rem',
+                            fontFamily: 'var(--font-serif)',
+                            fontWeight: '800',
+                            borderRadius: '6px',
+                            border: targetWins === opt.val ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                            backgroundColor: targetWins === opt.val ? 'var(--burgundy-primary)' : '#FFF',
+                            color: targetWins === opt.val ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Modalidad de Pago */}
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
+                      🪙 Modalidad de Entrada:
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button
-                        key={opt.val}
                         type="button"
-                        onClick={() => setTargetWins(opt.val)}
+                        onClick={() => { setPaymentMode(false); setPrizeType('chips'); }}
                         style={{
                           flex: 1,
-                          padding: '0.4rem 0.2rem',
-                          fontSize: '0.75rem',
+                          padding: '0.45rem',
+                          fontSize: '0.8rem',
                           fontFamily: 'var(--font-serif)',
                           fontWeight: '800',
                           borderRadius: '6px',
-                          border: targetWins === opt.val ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
-                          backgroundColor: targetWins === opt.val ? 'var(--burgundy-primary)' : '#FFF',
-                          color: targetWins === opt.val ? 'var(--text-gold-emboss)' : '#2C1A0E',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Modalidad de Pago */}
-                <div>
-                  <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.82rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.3rem' }}>
-                    🪙 Modalidad de Entrada:
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => { setPaymentMode(false); setPrizeType('chips'); }}
-                      style={{
-                        flex: 1,
-                        padding: '0.45rem',
-                        fontSize: '0.8rem',
-                        fontFamily: 'var(--font-serif)',
-                        fontWeight: '800',
-                        borderRadius: '6px',
-                        border: !paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
-                        backgroundColor: !paymentMode ? 'var(--burgundy-primary)' : '#FFF',
-                        color: !paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.3rem'
-                      }}
-                    >
-                      <Coins size={15} /> Fichas de Casino (Gratis)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setPaymentMode(true); setPrizeType('cash'); }}
-                      style={{
-                        flex: 1,
-                        padding: '0.45rem',
-                        fontSize: '0.8rem',
-                        fontFamily: 'var(--font-serif)',
-                        fontWeight: '800',
-                        borderRadius: '6px',
-                        border: paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
-                        backgroundColor: paymentMode ? 'var(--burgundy-primary)' : '#FFF',
-                        color: paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.3rem'
-                      }}
-                    >
-                      <DollarSign size={15} /> De Pago (Torneo)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Valor del Torneo (si es de pago) */}
-                {paymentMode && (
-                  <div className="animate-pop">
-                    <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.8rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.2rem' }}>
-                      🏆 Valor de Inscripción al Torneo:
-                    </label>
-                    <input
-                      type="text"
-                      value={cardPrice}
-                      onChange={e => setCardPrice(e.target.value)}
-                      placeholder="Ej: $10.000 COP o $20 USD por jugador"
-                      style={{
-                        width: '100%',
-                        padding: '0.45rem 0.75rem',
-                        fontSize: '0.85rem',
-                        borderRadius: '6px',
-                        border: '1.5px solid var(--gold-brass)',
-                        backgroundColor: '#FFF',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: '700'
-                      }}
-                    />
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem', display: 'block' }}>
-                      * Pago único por jugador para participar en todas las rondas del torneo. El acceso quedará bloqueado hasta que reporten el pago y tú lo apruebes.
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Botón 3D Burdeos Imperial */}
-          <button 
-            className="btn-vintage-burgundy"
-            onClick={handleCreateGame}
-            disabled={loading}
-          >
-            {loading ? 'Preparando sala...' : 'Crear Sala Ahora'}
-          </button>
-        </div>
-
-        {/* Separador de Cuentas de Ábaco */}
-        <AbacusDivider />
-
-        {/* SECCIÓN UNIRSE CON CÓDIGO */}
-        <div style={{ marginTop: '1.25rem' }}>
-          <div className="vintage-section-header" style={{ marginBottom: '1rem' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#5C1D24" stroke="#C59B27" strokeWidth="1.5" className="vintage-section-icon">
-              <circle cx="12" cy="7" r="4" />
-              <circle cx="12" cy="17" r="4" />
-              <circle cx="7" cy="12" r="4" />
-              <circle cx="17" cy="12" r="4" />
-              <circle cx="12" cy="12" r="2.5" fill="#D4AF37" />
-            </svg>
-            <span>Unirse con Código</span>
-          </div>
-
-          <form onSubmit={handleJoinGame} className="vintage-code-slot-container">
-            <div className="vintage-brass-slot">
-              <div className="slot-screw tl" />
-              <div className="slot-screw tr" />
-              <div className="slot-screw bl" />
-              <div className="slot-screw br" />
-
-              <div className="vintage-slot-window">
-                <input 
-                  type="text" 
-                  className="vintage-slot-input" 
-                  placeholder="EJ: GG2LYX" 
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  maxLength={6}
-                  required
-                />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              className="btn btn-secondary" 
-              style={{ 
-                padding: '0.75rem 2rem', 
-                fontSize: '1.05rem',
-                fontFamily: 'var(--font-serif)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              Entrar a Jugar <Play size={16} />
-            </button>
-          </form>
-        </div>
-
-        {/* SECCIÓN DE MESAS ABIERTAS EN VIVO */}
-        {(activeRooms.length > 0 || isAdminLoggedIn) && (
-          <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
-            <AbacusDivider />
-            
-            <div className="vintage-section-header" style={{ marginTop: '1rem', justifyContent: 'center' }}>
-              <Radio size={20} color="#C59B27" />
-              <span>Mesas en Vivo ({activeRooms.length})</span>
-            </div>
-            
-            {/* Panel de Control Super Administrador (SAAD.PAEZ) */}
-            {isAdminLoggedIn && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(92, 29, 36, 0.08) 0%, rgba(197, 155, 39, 0.12) 100%)',
-                border: '1.5px dashed var(--gold-primary)',
-                borderRadius: '8px',
-                padding: '0.6rem 0.85rem',
-                marginBottom: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.5rem',
-                flexWrap: 'wrap'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textAlign: 'left' }}>
-                  <Shield size={16} color="var(--burgundy-primary)" />
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--burgundy-primary)' }}>
-                      Super Admin: SAAD.PAEZ
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)' }}>
-                      {activeRooms.length === 0 ? 'Sin salas abiertas activas' : `${activeRooms.length} salas abiertas activas en el sistema`}
-                    </div>
-                  </div>
-                </div>
-
-                {activeRooms.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => { setShowAdminConfirmAllModal(true); playSound('pop'); }}
-                    className="btn-vintage-burgundy"
-                    style={{
-                      padding: '0.4rem 0.85rem',
-                      fontSize: '0.78rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      backgroundColor: '#8B1E26'
-                    }}
-                  >
-                    <Power size={13} /> Cerrar Todas las Salas
-                  </button>
-                )}
-              </div>
-            )}
-
-            {activeRooms.length === 0 && isAdminLoggedIn && (
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(46, 125, 50, 0.08)',
-                border: '1px solid #2E7D32',
-                borderRadius: '8px',
-                color: '#2E7D32',
-                fontSize: '0.85rem',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
-              }}>
-                <span>✓</span> Todas las salas han sido cerradas. Historial limpio.
-              </div>
-            )}
-
-            {activeRooms.length > 0 && (
-              <>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.85rem' }}>
-                  Salas abiertas para jugar o entrar a observar en tiempo real:
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {activeRooms.map((room) => {
-                    const isHost = activeHostGame?.id === room.id;
-                    const isPlaying = room.status === 'playing';
-
-                    return (
-                      <div
-                        key={room.id}
-                        style={{
-                          background: '#FFFDF9',
-                          border: isHost ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
-                          borderRadius: '8px',
-                          padding: '0.65rem 0.85rem',
+                          border: !paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                          backgroundColor: !paymentMode ? 'var(--burgundy-primary)' : '#FFF',
+                          color: !paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                          gap: '0.5rem',
-                          flexWrap: 'wrap'
+                          justifyContent: 'center',
+                          gap: '0.3rem'
                         }}
                       >
-                        {/* Información de la Sala */}
-                        <div style={{ textAlign: 'left' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '900', fontSize: '1.1rem', color: 'var(--burgundy-primary)' }}>
-                              Sala {room.id}
-                            </span>
-                            <span style={{
-                              fontSize: '0.68rem',
-                              padding: '1px 6px',
-                              borderRadius: '999px',
-                              backgroundColor: isPlaying ? '#2E7D32' : '#F59E0B',
-                              color: '#fff',
-                              fontWeight: 'bold'
-                            }}>
-                              {isPlaying ? '● En Juego' : 'Esperando'}
-                            </span>
-                            {isHost && (
-                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#92400E', fontWeight: 'bold' }}>
-                                👑 Tu Sala
+                        <Coins size={15} /> Fichas (Gratis)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPaymentMode(true); setPrizeType('cash'); }}
+                        style={{
+                          flex: 1,
+                          padding: '0.45rem',
+                          fontSize: '0.8rem',
+                          fontFamily: 'var(--font-serif)',
+                          fontWeight: '800',
+                          borderRadius: '6px',
+                          border: paymentMode ? '2px solid var(--burgundy-primary)' : '1px solid #C4B18F',
+                          backgroundColor: paymentMode ? 'var(--burgundy-primary)' : '#FFF',
+                          color: paymentMode ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.3rem'
+                        }}
+                      >
+                        <DollarSign size={15} /> Torneo de Pago
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Valor del Torneo (si es de pago) */}
+                  {paymentMode && (
+                    <div className="animate-pop">
+                      <label style={{ fontFamily: 'var(--font-serif)', fontSize: '0.8rem', fontWeight: '800', color: '#2C1A0E', display: 'block', marginBottom: '0.2rem' }}>
+                        🏆 Valor de Inscripción al Torneo:
+                      </label>
+                      <input
+                        type="text"
+                        value={cardPrice}
+                        onChange={e => setCardPrice(e.target.value)}
+                        placeholder="Ej: $10.000 COP o $20 USD"
+                        style={{
+                          width: '100%',
+                          padding: '0.45rem 0.75rem',
+                          fontSize: '0.85rem',
+                          borderRadius: '6px',
+                          border: '1.5px solid var(--gold-brass)',
+                          backgroundColor: '#FFF',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: '700'
+                        }}
+                      />
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem', display: 'block' }}>
+                        * Pago por jugador para todas las rondas.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Botón 3D Burdeos Imperial */}
+            <button 
+              className="btn-vintage-burgundy"
+              onClick={handleCreateGame}
+              disabled={loading}
+              style={{ width: '100%', marginTop: 'auto' }}
+            >
+              {loading ? 'Preparando sala...' : 'Crear Sala Ahora'}
+            </button>
+          </div>
+
+          {/* Separador exclusivo para pantallas móviles */}
+          <div className="home-mobile-divider">
+            <AbacusDivider />
+          </div>
+
+          {/* COLUMNA DERECHA: UNIRSE CON CÓDIGO + MESAS EN VIVO */}
+          <div className="home-two-col-right">
+
+            {/* SECCIÓN UNIRSE CON CÓDIGO */}
+            <div>
+              <div className="vintage-section-header" style={{ marginBottom: '0.75rem' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#5C1D24" stroke="#C59B27" strokeWidth="1.5" className="vintage-section-icon">
+                  <circle cx="12" cy="7" r="4" />
+                  <circle cx="12" cy="17" r="4" />
+                  <circle cx="7" cy="12" r="4" />
+                  <circle cx="17" cy="12" r="4" />
+                  <circle cx="12" cy="12" r="2.5" fill="#D4AF37" />
+                </svg>
+                <span>Unirse con Código</span>
+              </div>
+
+              <form onSubmit={handleJoinGame} className="vintage-code-slot-container" style={{ width: '100%', gap: '0.75rem' }}>
+                <div className="vintage-brass-slot" style={{ width: '100%', maxWidth: '100%' }}>
+                  <div className="slot-screw tl" />
+                  <div className="slot-screw tr" />
+                  <div className="slot-screw bl" />
+                  <div className="slot-screw br" />
+
+                  <div className="vintage-slot-window">
+                    <input 
+                      type="text" 
+                      className="vintage-slot-input" 
+                      placeholder="EJ: GG2LYX" 
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      maxLength={6}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn-vintage-burgundy" 
+                  style={{ 
+                    width: '100%',
+                    padding: '0.75rem 1.5rem', 
+                    fontSize: '1.05rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  Entrar a Jugar <Play size={16} />
+                </button>
+              </form>
+            </div>
+
+            {/* SECCIÓN DE MESAS ABIERTAS EN VIVO */}
+            <div style={{ marginTop: '0.75rem' }}>
+              <AbacusDivider />
+              
+              <div className="vintage-section-header" style={{ marginTop: '0.75rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
+                <Radio size={18} color="#C59B27" />
+                <span>Mesas en Vivo ({activeRooms.length})</span>
+              </div>
+              
+              {/* Panel de Control Super Administrador (SAAD.PAEZ) */}
+              {isAdminLoggedIn && (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(92, 29, 36, 0.08) 0%, rgba(197, 155, 39, 0.12) 100%)',
+                  border: '1.5px dashed var(--gold-primary)',
+                  borderRadius: '8px',
+                  padding: '0.5rem 0.75rem',
+                  marginBottom: '0.65rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textAlign: 'left' }}>
+                    <Shield size={15} color="var(--burgundy-primary)" />
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--burgundy-primary)' }}>
+                        Super Admin: SAAD.PAEZ
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-vintage-muted)' }}>
+                        {activeRooms.length === 0 ? 'Sin salas abiertas' : `${activeRooms.length} salas abiertas`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {activeRooms.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setShowAdminConfirmAllModal(true); playSound('pop'); }}
+                      className="btn-vintage-burgundy"
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        backgroundColor: '#8B1E26'
+                      }}
+                    >
+                      <Power size={12} /> Cerrar Todas
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {activeRooms.length === 0 ? (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(197, 155, 39, 0.08)',
+                  border: '1px dashed rgba(197, 155, 39, 0.35)',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-vintage-muted)',
+                  fontStyle: 'italic',
+                  textAlign: 'center'
+                }}>
+                  {isAdminLoggedIn 
+                    ? '✓ No hay salas abiertas activas en este momento.' 
+                    : 'No hay salas en vivo en este momento. ¡Crea una sala a la izquierda para comenzar!'}
+                </div>
+              ) : (
+                <>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginBottom: '0.5rem', textAlign: 'center' }}>
+                    Salas abiertas para jugar o entrar a observar en tiempo real:
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '210px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {activeRooms.map((room) => {
+                      const isHost = activeHostGame?.id === room.id;
+                      const isPlaying = room.status === 'playing';
+
+                      return (
+                        <div
+                          key={room.id}
+                          style={{
+                            background: '#FFFDF9',
+                            border: isHost ? '2px solid var(--gold-primary)' : '1.5px solid var(--gold-brass)',
+                            borderRadius: '8px',
+                            padding: '0.55rem 0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                            gap: '0.4rem',
+                            flexWrap: 'wrap'
+                          }}
+                        >
+                          {/* Información de la Sala */}
+                          <div style={{ textAlign: 'left' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '900', fontSize: '1.05rem', color: 'var(--burgundy-primary)' }}>
+                                Sala {room.id}
                               </span>
+                              <span style={{
+                                fontSize: '0.65rem',
+                                padding: '1px 5px',
+                                borderRadius: '999px',
+                                backgroundColor: isPlaying ? '#2E7D32' : '#F59E0B',
+                                color: '#fff',
+                                fontWeight: 'bold'
+                              }}>
+                                {isPlaying ? '● En Juego' : 'Esperando'}
+                              </span>
+                              {isHost && (
+                                <span style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#92400E', fontWeight: 'bold' }}>
+                                  👑 Tu Sala
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)' }}>
+                              {room.mode} Bolas • {room.paymentMode ? `Torneo (${room.cardPrice})` : 'Fichas Gratis'}
+                            </div>
+                          </div>
+
+                          {/* Botones de Acción */}
+                          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                            {isHost ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/host/${room.id}`)}
+                                className="btn-vintage-burgundy"
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              >
+                                <Crown size={13} /> Gestionar
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/play/${room.id}`)}
+                                  className="btn-vintage-burgundy"
+                                  style={{ padding: '0.35rem 0.7rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                >
+                                  <Play size={12} /> Jugar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/play/${room.id}?role=spectator`)}
+                                  className="vintage-brass-plaque"
+                                  style={{ margin: 0, padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                  title="Entrar solo a observar en vivo"
+                                >
+                                  <Eye size={12} /> Observar
+                                </button>
+                              </>
+                            )}
+
+                            {/* Botón de Clausura para Super Admin */}
+                            {isAdminLoggedIn && (
+                              <button
+                                type="button"
+                                onClick={() => handleAdminCloseRoom(room.id)}
+                                style={{
+                                  background: '#7F1D1D',
+                                  color: '#FEE2E2',
+                                  border: '1px solid #991B1B',
+                                  borderRadius: '5px',
+                                  padding: '0.35rem 0.6rem',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                title="Cerrar esta sala (Super Admin)"
+                              >
+                                <Power size={11} /> Cerrar
+                              </button>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-vintage-muted)' }}>
-                            {room.mode} Bolas • {room.paymentMode ? `Torneo (${room.cardPrice})` : 'Fichas Gratis'}
-                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
 
-                        {/* Botones de Acción */}
-                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                          {isHost ? (
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/host/${room.id}`)}
-                              className="btn-vintage-burgundy"
-                              style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                            >
-                              <Crown size={14} /> Gestionar
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/play/${room.id}`)}
-                                className="btn-vintage-burgundy"
-                                style={{ padding: '0.45rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                              >
-                                <Play size={13} /> Jugar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/play/${room.id}?role=spectator`)}
-                                className="vintage-brass-plaque"
-                                style={{ margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                                title="Entrar solo a observar en vivo"
-                              >
-                                <Eye size={13} /> Observar
-                              </button>
-                            </>
-                          )}
-
-                          {/* Botón de Clausura para Super Admin */}
-                          {isAdminLoggedIn && (
-                            <button
-                              type="button"
-                              onClick={() => handleAdminCloseRoom(room.id)}
-                              style={{
-                                background: '#7F1D1D',
-                                color: '#FEE2E2',
-                                border: '1px solid #991B1B',
-                                borderRadius: '6px',
-                                padding: '0.42rem 0.65rem',
-                                fontSize: '0.75rem',
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                                transition: 'all 0.15s ease'
-                              }}
-                              title="Cerrar esta sala (Super Admin)"
-                            >
-                              <Power size={12} /> Cerrar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
           </div>
-        )}
+
+        </div>
 
       </div>
 
