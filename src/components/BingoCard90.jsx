@@ -85,8 +85,9 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
           zIndex: 2
         }}>
           {row.map((cellValue, cIndex) => {
-            const isMarked = markedNumbers.has(cellValue);
-            const isCalled = calledNumbers.includes(cellValue) && !isMarked;
+            const numVal = Number(cellValue);
+            const isMarked = markedNumbers.has(cellValue) || markedNumbers.has(numVal);
+            const isCalled = (calledNumbers.includes(cellValue) || calledNumbers.includes(numVal)) && !isMarked;
 
             return (
               <div

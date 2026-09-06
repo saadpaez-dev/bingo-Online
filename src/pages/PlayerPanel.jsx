@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
@@ -80,6 +80,21 @@ const PlayerPanel = () => {
     });
     return () => unsubscribe();
   }, [gameId]);
+
+  // Sincronizar en tiempo real el progreso de la carrera fusionando las fichas locales del usuario activo
+  const activePlayersForRace = useMemo(() => {
+    const currentMarkedArr = Array.from(markedNumbers).map(n => Number(n)).filter(n => !isNaN(n));
+    return allPlayers.map(p => {
+      if (p.id === userId) {
+        return {
+          ...p,
+          card: playerData?.card || p.card,
+          markedNumbers: currentMarkedArr
+        };
+      }
+      return p;
+    });
+  }, [allPlayers, userId, playerData?.card, markedNumbers]);
 
   // Inicialización y auto-reconexión si el jugador ya estaba registrado en la sala
   useEffect(() => {
@@ -331,7 +346,8 @@ const PlayerPanel = () => {
       isOnline: true,
       lastSeen: Date.now(),
       joinedAt: Date.now(),
-      leftAt: null
+      leftAt: null,
+      markedNumbers: []
     });
     
     localStorage.setItem('bingo_player_active_game', gameId);
@@ -407,12 +423,20 @@ const PlayerPanel = () => {
     if (num === 'FREE' || num === null) return;
     
     playSound('draw');
+    const numericVal = typeof num === 'string' && !isNaN(Number(num)) ? Number(num) : num;
     let nextList = [];
     setMarkedNumbers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(num)) newSet.delete(num);
-      else newSet.add(num);
-      nextList = Array.from(newSet);
+      if (newSet.has(numericVal)) {
+        newSet.delete(numericVal);
+        newSet.delete(String(numericVal));
+      } else if (newSet.has(num)) {
+        newSet.delete(num);
+        newSet.delete(numericVal);
+      } else {
+        newSet.add(numericVal);
+      }
+      nextList = Array.from(newSet).map(n => Number(n)).filter(n => !isNaN(n));
       return newSet;
     });
 
@@ -1848,7 +1872,7 @@ const PlayerPanel = () => {
 
           {/* Módulo 2: Carrera hacia el Bingo en Tiempo Real (Widget en vivo para escritorio) */}
           <BingoRaceHostWidget
-            players={allPlayers}
+            players={activePlayersForRace}
             calledNumbers={called}
             mode={gameState.mode}
             currentUserId={userId}
@@ -1874,7 +1898,7 @@ const PlayerPanel = () => {
       <BingoRaceModal
         isOpen={showRaceModal}
         onClose={() => setShowRaceModal(false)}
-        players={allPlayers}
+        players={activePlayersForRace}
         calledNumbers={called}
         mode={gameState.mode}
         currentUserId={userId}

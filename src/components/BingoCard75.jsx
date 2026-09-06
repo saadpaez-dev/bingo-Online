@@ -88,8 +88,9 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPa
         }}>
           {row.map((cellValue, cIndex) => {
             const isFree = cellValue === 'FREE';
-            const isMarked = markedNumbers.has(cellValue) || isFree;
-            const isCalled = calledNumbers.includes(cellValue) && !isMarked;
+            const numVal = isFree ? 'FREE' : Number(cellValue);
+            const isMarked = markedNumbers.has(cellValue) || markedNumbers.has(numVal) || isFree;
+            const isCalled = (calledNumbers.includes(cellValue) || calledNumbers.includes(numVal)) && !isMarked;
             const inPattern = isCellInPattern(winningPattern, rIndex, cIndex);
             const isPatternActive = showPatternGuide && winningPattern && winningPattern !== 'full';
             

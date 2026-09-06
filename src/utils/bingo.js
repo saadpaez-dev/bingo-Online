@@ -172,25 +172,29 @@ export const getPatternRequiredNumbers = (card, patternId = 'full') => {
 // Validar cartón de 75 bolas según la dinámica/patrón activo
 export const validateBingo75 = (card, calledNumbers, patternId = 'full') => {
   if (!card) return false;
-  const calledSet = new Set(calledNumbers);
+  const calledSet = new Set((calledNumbers || []).map(n => Number(n)).filter(n => !isNaN(n)));
   calledSet.add('FREE');
 
   const requiredNumbers = getPatternRequiredNumbers(card, patternId);
   if (requiredNumbers.length === 0) return false;
 
-  return requiredNumbers.every(num => calledSet.has(num));
+  return requiredNumbers.every(val => {
+    if (val === 'FREE') return true;
+    const num = Number(val);
+    return calledSet.has(num);
+  });
 };
 
 // Validar cartón de 90 bolas (array plano de 15 números sin nulls)
 export const validateBingo90 = (flatGrid, calledNumbers, patternId = 'full') => {
   if (!flatGrid || flatGrid.length < 15) return false;
-  const calledSet = new Set(calledNumbers);
+  const calledSet = new Set((calledNumbers || []).map(n => Number(n)).filter(n => !isNaN(n)));
 
   // Si es una línea (cualquier fila de 5)
   if (patternId === 'one_line') {
     for (let row = 0; row < 3; row++) {
       const line = flatGrid.slice(row * 5, row * 5 + 5);
-      if (line.every(n => calledSet.has(n))) return true;
+      if (line.every(n => calledSet.has(Number(n)))) return true;
     }
     return false;
   }
@@ -200,28 +204,31 @@ export const validateBingo90 = (flatGrid, calledNumbers, patternId = 'full') => 
     let completedLines = 0;
     for (let row = 0; row < 3; row++) {
       const line = flatGrid.slice(row * 5, row * 5 + 5);
-      if (line.every(n => calledSet.has(n))) completedLines++;
+      if (line.every(n => calledSet.has(Number(n)))) completedLines++;
     }
     return completedLines >= 2;
   }
 
   // Cartón lleno por defecto
-  return flatGrid.every(num => calledSet.has(num));
+  return flatGrid.every(num => calledSet.has(Number(num)));
 };
 
 // Calcular progreso exacto del cartón hacia el Bingo (porcentaje y bolas faltantes)
 // Si se provee markedNumbers, solo cuenta las balotas cantadas que el jugador ha marcado con su ficha
 export const calculateCardProgress = (card, mode, calledNumbers = [], patternId = 'full', markedNumbers = null) => {
   if (!card) return { matched: 0, total: mode === 75 ? 24 : 15, missing: mode === 75 ? 24 : 15, percentage: 0 };
-  const calledSet = new Set(calledNumbers);
-  const markedSet = markedNumbers ? new Set(markedNumbers) : null;
+  
+  const calledSet = new Set((calledNumbers || []).map(n => Number(n)).filter(n => !isNaN(n)));
+  const markedSet = markedNumbers ? new Set(markedNumbers.map(n => Number(n)).filter(n => !isNaN(n))) : null;
 
   if (mode === 75) {
     const required = getPatternRequiredNumbers(card, patternId);
     const total = required.length || 24;
     let matched = 0;
 
-    required.forEach(num => {
+    required.forEach(val => {
+      const num = Number(val);
+      if (isNaN(num)) return;
       if (markedSet) {
         if (calledSet.has(num) && markedSet.has(num)) {
           matched++;
@@ -242,7 +249,9 @@ export const calculateCardProgress = (card, mode, calledNumbers = [], patternId 
       let maxMatched = 0;
       for (let row = 0; row < 3; row++) {
         const line = card.slice(row * 5, row * 5 + 5);
-        const m = line.filter(n => {
+        const m = line.filter(val => {
+          const n = Number(val);
+          if (isNaN(n)) return false;
           if (markedSet) {
             return calledSet.has(n) && markedSet.has(n);
           }
@@ -253,10 +262,31 @@ export const calculateCardProgress = (card, mode, calledNumbers = [], patternId 
       return { matched: maxMatched, total: 5, missing: Math.max(0, 5 - maxMatched), percentage: Math.round((maxMatched / 5) * 100) };
     }
 
+    if (patternId === 'two_lines') {
+      let lineMatches = [0, 0, 0];
+      for (let row = 0; row < 3; row++) {
+        const line = card.slice(row * 5, row * 5 + 5);
+        lineMatches[row] = line.filter(val => {
+          const n = Number(val);
+          if (isNaN(n)) return false;
+          if (markedSet) {
+            return calledSet.has(n) && markedSet.has(n);
+          }
+          return calledSet.has(n);
+        }).length;
+      }
+      lineMatches.sort((a, b) => b - a);
+      const matched = lineMatches[0] + lineMatches[1];
+      const percentage = Math.round((matched / 10) * 100);
+      return { matched, total: 10, missing: Math.max(0, 10 - matched), percentage };
+    }
+
     const total = 15;
     let matched = 0;
     if (Array.isArray(card)) {
-      card.forEach(num => {
+      card.forEach(val => {
+        const num = Number(val);
+        if (isNaN(num)) return;
         if (markedSet) {
           if (calledSet.has(num) && markedSet.has(num)) matched++;
         } else {
