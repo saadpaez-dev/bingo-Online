@@ -17,7 +17,7 @@ const BingoRaceModal = ({
   const activePlayers = players
     .filter(p => p.role !== 'spectator' && p.card)
     .map(p => {
-      const progress = calculateCardProgress(p.card, mode, calledNumbers, winningPattern);
+      const progress = calculateCardProgress(p.card, mode, calledNumbers, winningPattern, p.markedNumbers || []);
       return {
         ...p,
         progress

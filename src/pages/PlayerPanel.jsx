@@ -91,6 +91,9 @@ const PlayerPanel = () => {
           const pData = playerSnap.data();
           setName(pData.name || '');
           setPlayerData(pData);
+          if (Array.isArray(pData.markedNumbers)) {
+            setMarkedNumbers(new Set(pData.markedNumbers));
+          }
           setHasJoined(true);
           localStorage.setItem('bingo_player_active_game', gameId);
           // Reactivar presencia online en la sala
@@ -141,6 +144,11 @@ const PlayerPanel = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setPlayerData(data);
+
+        // Si el anfitrión inició nueva ronda o limpió fichas
+        if (Array.isArray(data.markedNumbers) && data.markedNumbers.length === 0 && markedNumbers.size > 0 && gameState?.status === 'waiting') {
+          setMarkedNumbers(new Set());
+        }
 
         // Sonido triunfal de desbloqueo cuando el anfitrión aprueba la inscripción
         if (data.paymentStatus === 'approved' && !prevApprovedRef.current) {
@@ -390,7 +398,8 @@ const PlayerPanel = () => {
     const newCard = gameState.mode === 75 ? generateCard75() : generateCard90();
     setMarkedNumbers(new Set());
     await updateDoc(doc(db, 'games', gameId, 'players', userId), {
-      card: newCard
+      card: newCard,
+      markedNumbers: []
     });
   };
 
@@ -398,12 +407,20 @@ const PlayerPanel = () => {
     if (num === 'FREE' || num === null) return;
     
     playSound('draw');
+    let nextList = [];
     setMarkedNumbers(prev => {
       const newSet = new Set(prev);
       if (newSet.has(num)) newSet.delete(num);
       else newSet.add(num);
+      nextList = Array.from(newSet);
       return newSet;
     });
+
+    if (userId && gameId) {
+      updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        markedNumbers: nextList
+      }).catch(e => console.error('Error guardando ficha marcada:', e));
+    }
   };
 
   const claimBingo = async () => {
@@ -921,7 +938,7 @@ const PlayerPanel = () => {
   
   // Jugador seleccionado para inspeccionar en modo observador
   const observedPlayer = playingPlayers.find(p => p.id === selectedObservedPlayerId) || playingPlayers[0] || null;
-  const observedProgress = observedPlayer ? calculateCardProgress(observedPlayer.card, gameState.mode, called, gameState.winningPattern || 'full') : null;
+  const observedProgress = observedPlayer ? calculateCardProgress(observedPlayer.card, gameState.mode, called, gameState.winningPattern || 'full', observedPlayer.markedNumbers || []) : null;
 
   const currentObservedIndex = playingPlayers.findIndex(p => p.id === observedPlayer?.id);
   const handlePrevObserved = () => {
@@ -1211,7 +1228,7 @@ const PlayerPanel = () => {
                     }}>
                       {playingPlayers.map(p => {
                         const isSelected = p.id === observedPlayer?.id;
-                        const pProg = calculateCardProgress(p.card, gameState.mode, called, gameState.winningPattern || 'full');
+                        const pProg = calculateCardProgress(p.card, gameState.mode, called, gameState.winningPattern || 'full', p.markedNumbers || []);
 
                         return (
                           <button
@@ -1342,8 +1359,8 @@ const PlayerPanel = () => {
                         />
                       </div>
                       {gameState.mode === 75 
-                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
-                        : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />}
+                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(observedPlayer.markedNumbers || [])} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
+                        : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(observedPlayer.markedNumbers || [])} toggleMark={() => {}} calledNumbers={called} />}
 
                       {/* Overlay de Proyección de la Ruleta y Zoom de la Biela sobre el Cartón */}
                       {showRouletteProjection && (

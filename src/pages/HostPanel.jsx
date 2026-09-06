@@ -107,6 +107,18 @@ const HostPanel = () => {
     roundEndingRef.current = false;
     winAnimationPlayedRef.current = false;
     await updateDoc(doc(db, 'games', gameId), { status: 'playing', calledNumbers: [], activeSpin: null });
+
+    try {
+      const playersRef = collection(db, 'games', gameId, 'players');
+      const snap = await getDocs(playersRef);
+      snap.docs.forEach(async (d) => {
+        await updateDoc(doc(db, 'games', gameId, 'players', d.id), { 
+          bingoClaimed: false, 
+          isValidated: false,
+          markedNumbers: []
+        }).catch(() => {});
+      });
+    } catch (err) {}
   };
 
   const endRound = async (winners = []) => {
@@ -162,7 +174,8 @@ const HostPanel = () => {
     snap.docs.forEach(async (d) => {
       await updateDoc(doc(db, 'games', gameId, 'players', d.id), { 
         bingoClaimed: false, 
-        isValidated: false 
+        isValidated: false,
+        markedNumbers: []
       });
     });
   };
@@ -186,7 +199,8 @@ const HostPanel = () => {
       await updateDoc(doc(db, 'games', gameId, 'players', d.id), { 
         bingoClaimed: false, 
         isValidated: false,
-        wins: 0
+        wins: 0,
+        markedNumbers: []
       });
     });
   };

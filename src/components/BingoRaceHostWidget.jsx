@@ -16,7 +16,7 @@ const BingoRaceHostWidget = ({
     .filter(p => p.role !== 'spectator' && p.card)
     .map(p => ({
       ...p,
-      progress: calculateCardProgress(p.card, mode, calledNumbers, winningPattern)
+      progress: calculateCardProgress(p.card, mode, calledNumbers, winningPattern, p.markedNumbers || [])
     }))
     .sort((a, b) => b.progress.percentage - a.progress.percentage);
 

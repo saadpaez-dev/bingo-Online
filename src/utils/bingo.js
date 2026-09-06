@@ -210,9 +210,11 @@ export const validateBingo90 = (flatGrid, calledNumbers, patternId = 'full') => 
 };
 
 // Calcular progreso exacto del cartón hacia el Bingo (porcentaje y bolas faltantes)
-export const calculateCardProgress = (card, mode, calledNumbers = [], patternId = 'full') => {
+// Si se provee markedNumbers, solo cuenta las balotas cantadas que el jugador ha marcado con su ficha
+export const calculateCardProgress = (card, mode, calledNumbers = [], patternId = 'full', markedNumbers = null) => {
   if (!card) return { matched: 0, total: mode === 75 ? 24 : 15, missing: mode === 75 ? 24 : 15, percentage: 0 };
   const calledSet = new Set(calledNumbers);
+  const markedSet = markedNumbers ? new Set(markedNumbers) : null;
 
   if (mode === 75) {
     const required = getPatternRequiredNumbers(card, patternId);
@@ -220,8 +222,14 @@ export const calculateCardProgress = (card, mode, calledNumbers = [], patternId 
     let matched = 0;
 
     required.forEach(num => {
-      if (calledSet.has(num)) {
-        matched++;
+      if (markedSet) {
+        if (calledSet.has(num) && markedSet.has(num)) {
+          matched++;
+        }
+      } else {
+        if (calledSet.has(num)) {
+          matched++;
+        }
       }
     });
 
@@ -234,7 +242,12 @@ export const calculateCardProgress = (card, mode, calledNumbers = [], patternId 
       let maxMatched = 0;
       for (let row = 0; row < 3; row++) {
         const line = card.slice(row * 5, row * 5 + 5);
-        const m = line.filter(n => calledSet.has(n)).length;
+        const m = line.filter(n => {
+          if (markedSet) {
+            return calledSet.has(n) && markedSet.has(n);
+          }
+          return calledSet.has(n);
+        }).length;
         if (m > maxMatched) maxMatched = m;
       }
       return { matched: maxMatched, total: 5, missing: Math.max(0, 5 - maxMatched), percentage: Math.round((maxMatched / 5) * 100) };
@@ -244,7 +257,11 @@ export const calculateCardProgress = (card, mode, calledNumbers = [], patternId 
     let matched = 0;
     if (Array.isArray(card)) {
       card.forEach(num => {
-        if (calledSet.has(num)) matched++;
+        if (markedSet) {
+          if (calledSet.has(num) && markedSet.has(num)) matched++;
+        } else {
+          if (calledSet.has(num)) matched++;
+        }
       });
     }
     const percentage = Math.round((matched / total) * 100);
