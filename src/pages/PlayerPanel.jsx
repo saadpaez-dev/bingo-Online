@@ -62,6 +62,8 @@ const PlayerPanel = () => {
   const [lastCalledCount, setLastCalledCount] = useState(0);
   const [allPlayers, setAllPlayers] = useState([]);
   const [showRaceModal, setShowRaceModal] = useState(false);
+  const [showRouletteProjection, setShowRouletteProjection] = useState(false);
+  const hideProjectionTimerRef = useRef(null);
   const [selectedObservedPlayerId, setSelectedObservedPlayerId] = useState(null);
   const [invalidBingoModal, setInvalidBingoModal] = useState({ show: false, message: '', title: '' });
   const winAnimationPlayedRef = useRef(false);
@@ -216,6 +218,85 @@ const PlayerPanel = () => {
       colors: ['#5C1D24', '#D4AF37', '#2E7D32', '#F4E7CB']
     });
   }, [playSound]);
+
+  // Proyección de la Ruleta sobre el Cartón cuando hay un giro en tiempo real
+  useEffect(() => {
+    if (gameState?.activeSpin && gameState.activeSpin.number) {
+      if (hideProjectionTimerRef.current) {
+        clearTimeout(hideProjectionTimerRef.current);
+        hideProjectionTimerRef.current = null;
+      }
+      setShowRouletteProjection(true);
+    }
+  }, [gameState?.activeSpin]);
+
+  useEffect(() => {
+    return () => {
+      if (hideProjectionTimerRef.current) {
+        clearTimeout(hideProjectionTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleRouletteComplete = useCallback(() => {
+    if (hideProjectionTimerRef.current) clearTimeout(hideProjectionTimerRef.current);
+    // Permanece visible 2.5 segundos para apreciar el número revelado y luego desaparece
+    hideProjectionTimerRef.current = setTimeout(() => {
+      setShowRouletteProjection(false);
+    }, 2500);
+  }, []);
+
+  // Ejecución del tiro concedido al jugador por el anfitrión
+  const handlePlayerSpinRoulette = async () => {
+    if (!gameState || gameState.activeSpin !== null) return;
+    playSound('pop');
+
+    const gameRef = doc(db, 'games', gameId);
+    const snap = await getDoc(gameRef);
+    if (!snap.exists()) return;
+
+    const freshState = snap.data();
+    if (freshState.status !== 'playing') return;
+
+    const maxNumber = freshState.mode === 75 ? 75 : 90;
+    const called = freshState.calledNumbers || [];
+
+    if (called.length >= maxNumber) return;
+
+    let nextNum;
+    const calledSet = new Set(called);
+    do {
+      nextNum = Math.floor(Math.random() * maxNumber) + 1;
+    } while (calledSet.has(nextNum));
+
+    const now = Date.now();
+    const currentDur = freshState.spinDuration || 3;
+    const currentSpins = freshState.assignedSpinner?.remainingSpins || 1;
+    const nextRemaining = currentSpins - 1;
+
+    // 1. Iniciar giro en simultáneo para toda la sala
+    await updateDoc(gameRef, {
+      activeSpin: {
+        number: nextNum,
+        spinDuration: currentDur,
+        startedAt: now
+      },
+      lastSpinAt: now,
+      assignedSpinner: nextRemaining > 0 
+        ? { ...freshState.assignedSpinner, remainingSpins: nextRemaining }
+        : null
+    });
+
+    // 2. Al detenerse físicamente la ruleta, oficializar el número
+    const durationMs = Math.round(currentDur * 1000);
+    setTimeout(async () => {
+      playSound('pop');
+      await updateDoc(gameRef, {
+        calledNumbers: [...called, nextNum],
+        activeSpin: null
+      });
+    }, durationMs);
+  };
 
   const handleJoin = async (e, joinRole = 'paid') => {
     if (e) e.preventDefault();
@@ -827,6 +908,13 @@ const PlayerPanel = () => {
     else currentLetter = 'O';
   }
 
+  // Turno concedido al jugador por el anfitrión para hacer girar la biela
+  const isMyTurnToSpin = Boolean(
+    gameState?.status === 'playing' &&
+    gameState?.assignedSpinner?.playerId === userId &&
+    (gameState?.assignedSpinner?.remainingSpins || 0) > 0
+  );
+
   // Jugadores activos con cartón en la sala
   const playingPlayers = allPlayers.filter(p => p.role !== 'spectator' && p.card);
   
@@ -984,6 +1072,61 @@ const PlayerPanel = () => {
         {/* COLUMNA IZQUIERDA: TAPETE DE JUEGO (CARTÓN Y ACCIONES) */}
         <div className="player-card-col">
           
+          {/* Notificación de Turno de Ruleta Concedido al Jugador */}
+          {isMyTurnToSpin && (
+            <div 
+              className="animate-pop"
+              style={{
+                maxWidth: '520px',
+                margin: '0 auto 1.25rem auto',
+                padding: '1.1rem 1.4rem',
+                borderRadius: '14px',
+                background: 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)',
+                border: '2.5px solid var(--gold-primary)',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.55)',
+                color: 'var(--text-gold-emboss)',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.6rem' }}>🎲</span>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: '900', color: '#FFF8EA' }}>
+                    ¡El Anfitrión te ha concedido el tiro de la Biela!
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.92rem', color: 'var(--gold-highlight)', fontWeight: 'bold' }}>
+                    Tienes {gameState.assignedSpinner.remainingSpins} {gameState.assignedSpinner.remainingSpins === 1 ? 'tiro de Ruleta disponible' : 'tiros de Ruleta disponibles'}
+                  </p>
+                </div>
+                <span style={{ fontSize: '1.6rem' }}>🎲</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePlayerSpinRoulette}
+                disabled={gameState.activeSpin !== null}
+                className="btn-vintage-burgundy animate-pop"
+                style={{
+                  fontSize: '1.15rem',
+                  padding: '0.75rem 2rem',
+                  background: 'linear-gradient(180deg, #D4AF37 0%, #AA822A 100%)',
+                  color: '#2A1108',
+                  fontWeight: '900',
+                  border: '2px solid #FFF',
+                  boxShadow: '0 4px 15px rgba(212, 175, 55, 0.6)',
+                  cursor: gameState.activeSpin !== null ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>🎰</span>
+                <span>{gameState.activeSpin !== null ? 'Girando la Biela...' : '¡Girar la Ruleta Ahora!'}</span>
+              </button>
+            </div>
+          )}
+
           {/* CARTÓN DE BINGO O LOBBY DE OBSERVADOR */}
           <div style={{ margin: '0 auto', width: '100%' }}>
             {isSpectator ? (
@@ -1183,7 +1326,7 @@ const PlayerPanel = () => {
 
                   {/* Render del Cartón del Jugador Observado en Modo Solo Lectura (Estampado en Vivo) */}
                   {observedPlayer && (
-                    <>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
                         <PatternBadge 
                           patternId={gameState.winningPattern || 'full'} 
@@ -1192,9 +1335,88 @@ const PlayerPanel = () => {
                         />
                       </div>
                       {gameState.mode === 75 
-                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} />
+                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
                         : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />}
-                    </>
+
+                      {/* Overlay de Proyección de la Ruleta y Zoom de la Biela sobre el Cartón */}
+                      {showRouletteProjection && (
+                        <div 
+                          className="animate-pop"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 100,
+                            backgroundColor: 'rgba(20, 10, 5, 0.92)',
+                            backdropFilter: 'blur(8px)',
+                            borderRadius: '16px',
+                            border: '3.5px solid var(--gold-primary)',
+                            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), inset 0 0 25px rgba(197, 155, 39, 0.35)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0.75rem',
+                            animation: 'fadeIn 0.25s ease'
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setShowRouletteProjection(false)}
+                            style={{
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: 'rgba(0,0,0,0.6)',
+                              border: '1.5px solid var(--gold-brass)',
+                              borderRadius: '50%',
+                              width: '30px',
+                              height: '30px',
+                              color: '#FFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              zIndex: 110,
+                              fontWeight: 'bold'
+                            }}
+                            title="Cerrar proyección y volver al cartón"
+                          >
+                            ✕
+                          </button>
+
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.45rem',
+                            marginBottom: '0.35rem',
+                            color: 'var(--text-gold-emboss)',
+                            fontFamily: 'var(--font-serif)',
+                            fontSize: '0.92rem',
+                            fontWeight: '900',
+                            letterSpacing: '1px'
+                          }}>
+                            <span>⚜️</span>
+                            <span>EXTRAYENDO NÚMERO EN VIVO</span>
+                            <span>⚜️</span>
+                          </div>
+
+                          <VintageRoulette
+                            currentNumber={currentNumber}
+                            currentLetter={currentLetter}
+                            activeSpin={gameState.activeSpin || null}
+                            remainingCount={maxNumber - called.length}
+                            gameMode={gameState.mode}
+                            spinDuration={gameState.spinDuration || 3}
+                            lastSpinAt={gameState.lastSpinAt || null}
+                            readOnly={true}
+                            onSpinComplete={handleRouletteComplete}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {/* Botón de Inscripción si decide jugar */}
@@ -1220,7 +1442,7 @@ const PlayerPanel = () => {
               )
             ) : (
               playerData?.card && (
-                <>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
                     <PatternBadge 
                       patternId={gameState.winningPattern || 'full'} 
@@ -1229,9 +1451,88 @@ const PlayerPanel = () => {
                     />
                   </div>
                   {gameState.mode === 75 
-                    ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} />
+                    ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
                     : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />}
-                </>
+
+                  {/* Overlay de Proyección de la Ruleta y Zoom de la Biela sobre el Cartón */}
+                  {showRouletteProjection && (
+                    <div 
+                      className="animate-pop"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 100,
+                        backgroundColor: 'rgba(20, 10, 5, 0.92)',
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: '16px',
+                        border: '3.5px solid var(--gold-primary)',
+                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), inset 0 0 25px rgba(197, 155, 39, 0.35)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0.75rem',
+                        animation: 'fadeIn 0.25s ease'
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setShowRouletteProjection(false)}
+                        style={{
+                          position: 'absolute',
+                          top: '10px',
+                          right: '10px',
+                          background: 'rgba(0,0,0,0.6)',
+                          border: '1.5px solid var(--gold-brass)',
+                          borderRadius: '50%',
+                          width: '30px',
+                          height: '30px',
+                          color: '#FFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          zIndex: 110,
+                          fontWeight: 'bold'
+                        }}
+                        title="Cerrar proyección y volver al cartón"
+                      >
+                        ✕
+                      </button>
+
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        marginBottom: '0.35rem',
+                        color: 'var(--text-gold-emboss)',
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '0.92rem',
+                        fontWeight: '900',
+                        letterSpacing: '1px'
+                      }}>
+                        <span>⚜️</span>
+                        <span>EXTRAYENDO NÚMERO EN VIVO</span>
+                        <span>⚜️</span>
+                      </div>
+
+                      <VintageRoulette
+                        currentNumber={currentNumber}
+                        currentLetter={currentLetter}
+                        activeSpin={gameState.activeSpin || null}
+                        remainingCount={maxNumber - called.length}
+                        gameMode={gameState.mode}
+                        spinDuration={gameState.spinDuration || 3}
+                        lastSpinAt={gameState.lastSpinAt || null}
+                        readOnly={true}
+                        onSpinComplete={handleRouletteComplete}
+                      />
+                    </div>
+                  )}
+                </div>
               )
             )}
           </div>
@@ -1307,13 +1608,14 @@ const PlayerPanel = () => {
         {/* COLUMNA DERECHA: ESTADO DE LA MESA, SORTEO Y CARRERA AL BINGO EN VIVO */}
         <div className="player-side-col">
           
-          {/* Módulo 1: Ruleta Vintage de Salón y Lente de Zoom Sincronizada */}
+          {/* Módulo 1: Tablero de la Última Balota Extraída y Proyección */}
           {gameState.status === 'playing' && (
             <div className="card text-center animate-pop" style={{
               padding: '1.25rem 1rem',
-              border: '3px solid var(--burgundy-primary)'
+              border: '3px solid var(--burgundy-primary)',
+              background: 'radial-gradient(ellipse at center, #FFFDF9 0%, #F5E8CE 100%)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', marginBottom: '0.65rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', marginBottom: '0.75rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>⚜️</span>
                 <h3 style={{
                   fontFamily: 'var(--font-serif)',
@@ -1324,31 +1626,97 @@ const PlayerPanel = () => {
                   fontWeight: '900',
                   margin: 0
                 }}>
-                  Ruleta de Salón Vintage
+                  Última Balota Extraída
                 </h3>
                 <span style={{ fontSize: '1.1rem' }}>⚜️</span>
               </div>
               
-              {/* Ruleta interactiva sincronizada con el anfitrión */}
-              <VintageRoulette
-                currentNumber={currentNumber}
-                currentLetter={currentLetter}
-                activeSpin={gameState.activeSpin || null}
-                remainingCount={maxNumber - called.length}
-                gameMode={gameState.mode}
-                spinDuration={gameState.spinDuration || 3}
-                lastSpinAt={gameState.lastSpinAt || null}
-                readOnly={true}
-              />
+              {currentNumber ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+                  <div style={{
+                    width: '96px',
+                    height: '96px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle at 35% 30%, #FFFFFF 0%, #F5E2B8 50%, #C99B27 100%)',
+                    border: '3.5px solid var(--gold-primary)',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.35), inset 0 2px 6px rgba(255,255,255,0.8)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    animation: 'bounceIn 0.35s ease'
+                  }}>
+                    {currentLetter && (
+                      <span style={{
+                        fontSize: '0.85rem',
+                        fontWeight: '900',
+                        color: 'var(--burgundy-primary)',
+                        fontFamily: 'var(--font-serif)',
+                        letterSpacing: '1px',
+                        lineHeight: 1
+                      }}>
+                        {currentLetter}
+                      </span>
+                    )}
+                    <span style={{
+                      fontSize: currentLetter ? '2rem' : '2.3rem',
+                      fontWeight: '900',
+                      color: '#1F1610',
+                      fontFamily: 'var(--font-serif)',
+                      lineHeight: 1
+                    }}>
+                      {currentNumber}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    fontSize: '0.82rem',
+                    fontFamily: 'var(--font-serif)',
+                    color: 'var(--text-vintage-muted)',
+                    fontWeight: 'bold'
+                  }}>
+                    Quedan {maxNumber - called.length} balotas en el bolillero
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowRouletteProjection(true)}
+                    className="vintage-brass-plaque"
+                    style={{
+                      marginTop: '0.4rem',
+                      padding: '0.35rem 0.85rem',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                    title="Ver la ruleta y zoom proyectados sobre el cartón"
+                  >
+                    <span>🎡</span>
+                    <span>Proyectar Ruleta en Cartón</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '1.25rem 0.5rem',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '0.92rem',
+                  color: 'var(--text-vintage-muted)',
+                  fontStyle: 'italic'
+                }}>
+                  Esperando el primer giro de la biela...
+                </div>
+              )}
 
               {/* Historial de bolas previas como fichas de madera */}
               {called.length > 1 && (
-                <div style={{ marginTop: '1rem' }}>
+                <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(139, 107, 61, 0.25)', paddingTop: '0.75rem' }}>
                   <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-serif)', color: 'var(--text-vintage-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 'bold' }}>
-                    Últimas Bolas Extraídas
+                    Balotas Anteriores
                   </div>
                   <div className="flex justify-center gap-2" style={{ flexWrap: 'wrap' }}>
-                    {called.slice(-6, -1).reverse().map((num, i) => (
+                    {called.slice(-7, -1).reverse().map((num, i) => (
                       <div key={`${num}-${i}`} className="animate-pop" style={{
                         padding: '0.35rem 0.85rem',
                         background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)',

@@ -23,6 +23,8 @@ const HostPanel = () => {
   const [activeReactions, setActiveReactions] = useState([]);
   const [autoDrawInterval, setAutoDrawInterval] = useState(null);
   const [isRouletteSpinning, setIsRouletteSpinning] = useState(false);
+  const [selectedPlayerToAssign, setSelectedPlayerToAssign] = useState('');
+  const [spinsToAssign, setSpinsToAssign] = useState(1);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [showCloseRoomModal, setShowCloseRoomModal] = useState(false);
   const [departedNotification, setDepartedNotification] = useState(null);
@@ -197,6 +199,41 @@ const HostPanel = () => {
       });
     } catch (err) {
       console.error('Error actualizando dinámica de juego:', err);
+    }
+  };
+
+  // Conceder Turnos de Tiro de la Ruleta a un Jugador
+  const handleAssignSpinsToPlayer = async () => {
+    if (!selectedPlayerToAssign) return;
+    const playerObj = players.find(p => p.id === selectedPlayerToAssign);
+    if (!playerObj) return;
+
+    playSound('win');
+    try {
+      await updateDoc(doc(db, 'games', gameId), {
+        assignedSpinner: {
+          playerId: playerObj.id,
+          playerName: playerObj.name,
+          totalSpins: Number(spinsToAssign) || 1,
+          remainingSpins: Number(spinsToAssign) || 1,
+          grantedAt: Date.now()
+        }
+      });
+      setSelectedPlayerToAssign('');
+    } catch (err) {
+      console.error('Error asignando tiros a jugador:', err);
+    }
+  };
+
+  // Cancelar turno concedido y retomar control de la ruleta
+  const handleCancelAssignedSpinner = async () => {
+    playSound('pop');
+    try {
+      await updateDoc(doc(db, 'games', gameId), {
+        assignedSpinner: null
+      });
+    } catch (err) {
+      console.error('Error cancelando turno concedido:', err);
     }
   };
 
@@ -966,6 +1003,143 @@ const HostPanel = () => {
                 lastSpinAt={gameState.lastSpinAt || null}
                 onDurationChange={handleDurationChange}
               />
+
+              {/* Ceder Tiro de la Biela a un Jugador */}
+              <div style={{ 
+                marginTop: '1.25rem',
+                background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
+                padding: '0.95rem 1.15rem', 
+                borderRadius: '12px',
+                border: '1.5px solid var(--gold-brass)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🎲</span>
+                    <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '0.92rem', color: '#3A1015' }}>
+                      Ceder Turno de la Biela a un Jugador
+                    </span>
+                  </div>
+                  {gameState.assignedSpinner && gameState.assignedSpinner.remainingSpins > 0 && (
+                    <span style={{ 
+                      fontSize: '0.72rem', 
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '999px',
+                      background: '#15803D',
+                      color: '#FFF',
+                      fontWeight: 'bold',
+                      fontFamily: 'var(--font-serif)'
+                    }}>
+                      En manos de {gameState.assignedSpinner.playerName} ({gameState.assignedSpinner.remainingSpins} {gameState.assignedSpinner.remainingSpins === 1 ? 'tiro' : 'tiros'})
+                    </span>
+                  )}
+                </div>
+
+                {gameState.assignedSpinner && gameState.assignedSpinner.remainingSpins > 0 ? (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.55rem 0.85rem',
+                    background: '#FFFDF5',
+                    borderRadius: '8px',
+                    border: '1.5px solid #D4AF37',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                  }}>
+                    <div style={{ fontSize: '0.85rem', color: '#2C1A0E', fontFamily: 'var(--font-serif)' }}>
+                      Esperando que <strong>{gameState.assignedSpinner.playerName}</strong> accione la biela ({gameState.assignedSpinner.remainingSpins} {gameState.assignedSpinner.remainingSpins === 1 ? 'tiro pendiente' : 'tiros pendientes'})...
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCancelAssignedSpinner}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.78rem',
+                        background: '#7E252D',
+                        color: '#FFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Cancelar y Retomar
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* Selector de Jugador */}
+                    <select
+                      value={selectedPlayerToAssign}
+                      onChange={(e) => setSelectedPlayerToAssign(e.target.value)}
+                      style={{
+                        flex: 2,
+                        minWidth: '150px',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.85rem',
+                        background: '#FFF',
+                        border: '1.5px solid var(--gold-brass)',
+                        borderRadius: '8px',
+                        fontFamily: 'var(--font-serif)'
+                      }}
+                    >
+                      <option value="">-- Elige un jugador --</option>
+                      {players
+                        .filter(p => p.role !== 'spectator')
+                        .map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} {p.wins ? `(${p.wins}w)` : ''}
+                          </option>
+                        ))}
+                    </select>
+
+                    {/* Selector de Tiros (1, 2, 3) */}
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      {[1, 2, 3].map(count => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => setSpinsToAssign(count)}
+                          style={{
+                            padding: '0.45rem 0.65rem',
+                            fontSize: '0.82rem',
+                            fontFamily: 'var(--font-serif)',
+                            fontWeight: '900',
+                            borderRadius: '6px',
+                            border: spinsToAssign === count ? '2px solid var(--gold-primary)' : '1px solid #C4B18F',
+                            background: spinsToAssign === count ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)' : '#FFF',
+                            color: spinsToAssign === count ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                            cursor: 'pointer'
+                          }}
+                          title={`${count} ${count === 1 ? 'tiro' : 'tiros'}`}
+                        >
+                          {count} {count === 1 ? 'tiro' : 'tiros'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Botón Asignar */}
+                    <button
+                      type="button"
+                      onClick={handleAssignSpinsToPlayer}
+                      disabled={!selectedPlayerToAssign || isRouletteSpinning}
+                      className="btn-vintage-burgundy"
+                      style={{
+                        padding: '0.45rem 1rem',
+                        fontSize: '0.85rem',
+                        opacity: (!selectedPlayerToAssign || isRouletteSpinning) ? 0.6 : 1,
+                        cursor: (!selectedPlayerToAssign || isRouletteSpinning) ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Conceder Tiros
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Controles de velocidad y Sorteo Automático */}
               <div style={{ 

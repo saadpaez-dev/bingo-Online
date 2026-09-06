@@ -50,7 +50,8 @@ const VintageRoulette = ({
   spinDuration = 3,
   lastSpinAt = null,
   onDurationChange,
-  readOnly = false
+  readOnly = false,
+  onSpinComplete = null
 }) => {
   const pockets = useMemo(() => generatePockets(gameMode), [gameMode]);
   const totalSlices = pockets.length;
@@ -197,6 +198,10 @@ const VintageRoulette = ({
           origin: { y: 0.65 },
           colors: ['#D4AF37', '#80141D', '#F4E7CB', '#166534']
         });
+
+        if (onSpinComplete) {
+          onSpinComplete({ number: nextNum, letter: letLetter });
+        }
       }
     };
 
@@ -728,6 +733,7 @@ const VintageRoulette = ({
               <option value={4}>Suspenso (4 seg)</option>
               <option value={5}>Dramático (5 seg)</option>
               <option value={7}>Casino Real (7 seg)</option>
+              <option value={14}>Doble Casino Real (14 seg)</option>
             </select>
           </div>
 

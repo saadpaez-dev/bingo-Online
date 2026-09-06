@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Star } from 'lucide-react';
 import { isCellInPattern } from '../utils/bingo';
 
-const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPattern = 'full' }) => {
+const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPattern = 'full', showPatternGuide = false }) => {
   if (!card) return null;
 
   const headers = ['B', 'I', 'N', 'G', 'O'];
@@ -91,7 +91,7 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPa
             const isMarked = markedNumbers.has(cellValue) || isFree;
             const isCalled = calledNumbers.includes(cellValue) && !isMarked;
             const inPattern = isCellInPattern(winningPattern, rIndex, cIndex);
-            const isPatternActive = winningPattern && winningPattern !== 'full';
+            const isPatternActive = showPatternGuide && winningPattern && winningPattern !== 'full';
             
             return (
               <div 
