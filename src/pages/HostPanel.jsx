@@ -9,6 +9,8 @@ import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 import VintageRoulette from '../components/VintageRoulette';
+import PatternBadge from '../components/PatternBadge';
+import { BINGO_PATTERNS } from '../utils/bingo';
 import bgTable from '../assets/bg-table.jpg';
 
 const HostPanel = () => {
@@ -184,6 +186,18 @@ const HostPanel = () => {
         wins: 0
       });
     });
+  };
+
+  // Cambiar Dinámica de Juego (Letras B-I-N-G-O)
+  const handleSetWinningPattern = async (newPattern) => {
+    playSound('pop');
+    try {
+      await updateDoc(doc(db, 'games', gameId), {
+        winningPattern: newPattern
+      });
+    } catch (err) {
+      console.error('Error actualizando dinámica de juego:', err);
+    }
   };
 
   // Validaciones de Pago
@@ -603,6 +617,15 @@ const HostPanel = () => {
           </div>
         </div>
 
+        {/* Insignia de Dinámica Activa en Encabezado */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <PatternBadge 
+            patternId={gameState.winningPattern || 'full'} 
+            mode={gameState.mode} 
+            compact={true} 
+          />
+        </div>
+
         {/* Botón de Socios, Compartir y Cerrar Sala */}
         <div className="flex gap-3 items-center" style={{ flexWrap: 'wrap' }}>
           <button 
@@ -767,6 +790,7 @@ const HostPanel = () => {
         players={players}
         calledNumbers={called}
         mode={gameState.mode}
+        winningPattern={gameState.winningPattern || 'full'}
       />
 
       {/* ÁREA PRINCIPAL MODO SALA / TV */}
@@ -786,12 +810,86 @@ const HostPanel = () => {
                 <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.3rem', marginBottom: '0.5rem', color: 'var(--text-vintage-dark)', fontWeight: '900' }}>
                   Mesa Lista - Ronda {currentRound}
                 </h2>
-                <p className="vintage-subtitle" style={{ marginBottom: '1.75rem', fontSize: '1.15rem' }}>
+                <p className="vintage-subtitle" style={{ marginBottom: '1.25rem', fontSize: '1.15rem' }}>
                   {players.length === 0 
                     ? 'Esperando a los participantes...' 
                     : `${players.length} socios en la mesa listos para el sorteo.`
                   }
                 </p>
+
+                {/* Selector de Dinámica para la Ronda (Letras B-I-N-G-O) */}
+                {gameState.mode === 75 && (
+                  <div style={{
+                    margin: '0 auto 1.5rem auto',
+                    maxWidth: '460px',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(180deg, #FAF4E5 0%, #F5E9CC 100%)',
+                    border: '1.5px solid var(--gold-brass)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.55rem'
+                    }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '0.9rem', color: '#2C1A0E' }}>
+                        🎯 Dinámica para Ronda {currentRound}:
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--burgundy-primary)', fontStyle: 'italic', fontWeight: 'bold' }}>
+                        Toca para cambiar
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(6, 1fr)',
+                      gap: '0.35rem',
+                      marginBottom: '0.65rem'
+                    }}>
+                      {[
+                        { id: 'full', label: 'Pleno' },
+                        { id: 'letter_b', label: 'B' },
+                        { id: 'letter_i', label: 'I' },
+                        { id: 'letter_n', label: 'N' },
+                        { id: 'letter_g', label: 'G' },
+                        { id: 'letter_o', label: 'O' }
+                      ].map(p => {
+                        const isSelected = (gameState.winningPattern || 'full') === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => handleSetWinningPattern(p.id)}
+                            style={{
+                              padding: '0.45rem 0.2rem',
+                              borderRadius: '6px',
+                              border: isSelected ? '2px solid var(--gold-primary)' : '1px solid #C4B18F',
+                              background: isSelected 
+                                ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)' 
+                                : '#FFFFFF',
+                              color: isSelected ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                              fontFamily: 'var(--font-serif)',
+                              fontWeight: '900',
+                              fontSize: '0.88rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.3)' : 'none'
+                            }}
+                            title={p.label === 'Pleno' ? 'Cartón Lleno' : `Letra ${p.label}`}
+                          >
+                            {p.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PatternBadge patternId={gameState.winningPattern || 'full'} mode={75} compact={false} />
+                    </div>
+                  </div>
+                )}
 
                 {paymentMode && pendingPaymentsCount > 0 && (
                   <div style={{ 

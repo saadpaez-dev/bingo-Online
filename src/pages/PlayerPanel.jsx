@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, loginAnonymously } from '../firebase';
-import { generateCard75, generateCard90, validateBingo75, validateBingo90, calculateCardProgress } from '../utils/bingo';
+import { generateCard75, generateCard90, validateBingo75, validateBingo90, calculateCardProgress, getPattern } from '../utils/bingo';
 import BingoCard75 from '../components/BingoCard75';
 import BingoCard90 from '../components/BingoCard90';
+import PatternBadge from '../components/PatternBadge';
 import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceModal from '../components/BingoRaceModal';
@@ -334,9 +335,10 @@ const PlayerPanel = () => {
       return;
     }
 
+    const activePattern = gameState.winningPattern || 'full';
     const isValid = gameState.mode === 75 
-      ? validateBingo75(playerData.card, gameState.calledNumbers)
-      : validateBingo90(playerData.card, gameState.calledNumbers);
+      ? validateBingo75(playerData.card, gameState.calledNumbers, activePattern)
+      : validateBingo90(playerData.card, gameState.calledNumbers, activePattern);
 
     if (isValid) {
       await updateDoc(doc(db, 'games', gameId, 'players', userId), {
@@ -345,10 +347,13 @@ const PlayerPanel = () => {
       });
     } else {
       playSound('pop');
+      const patternInfo = getPattern(activePattern);
       setInvalidBingoModal({
         show: true,
         title: '¡Bingo Inválido!',
-        message: 'Tu cartón aún no cumple con la condición de victoria o te faltan números por salir en el bolillero. ¡Revisa con calma y sigue jugando!'
+        message: gameState.mode === 75 && activePattern !== 'full'
+          ? `Tu cartón aún no completa la figura requerida (${patternInfo.name}: ${patternInfo.description}). ¡Revisa tus números marcados y sigue jugando!`
+          : 'Tu cartón aún no cumple con la condición de victoria o te faltan números por salir en el bolillero. ¡Revisa con calma y sigue jugando!'
       });
       await updateDoc(doc(db, 'games', gameId, 'players', userId), {
         bingoClaimed: true,
@@ -827,7 +832,7 @@ const PlayerPanel = () => {
   
   // Jugador seleccionado para inspeccionar en modo observador
   const observedPlayer = playingPlayers.find(p => p.id === selectedObservedPlayerId) || playingPlayers[0] || null;
-  const observedProgress = observedPlayer ? calculateCardProgress(observedPlayer.card, gameState.mode, called) : null;
+  const observedProgress = observedPlayer ? calculateCardProgress(observedPlayer.card, gameState.mode, called, gameState.winningPattern || 'full') : null;
 
   const currentObservedIndex = playingPlayers.findIndex(p => p.id === observedPlayer?.id);
   const handlePrevObserved = () => {
@@ -1056,7 +1061,7 @@ const PlayerPanel = () => {
                     }}>
                       {playingPlayers.map(p => {
                         const isSelected = p.id === observedPlayer?.id;
-                        const pProg = calculateCardProgress(p.card, gameState.mode, called);
+                        const pProg = calculateCardProgress(p.card, gameState.mode, called, gameState.winningPattern || 'full');
 
                         return (
                           <button
@@ -1178,9 +1183,18 @@ const PlayerPanel = () => {
 
                   {/* Render del Cartón del Jugador Observado en Modo Solo Lectura (Estampado en Vivo) */}
                   {observedPlayer && (
-                    gameState.mode === 75 
-                      ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
-                      : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                        <PatternBadge 
+                          patternId={gameState.winningPattern || 'full'} 
+                          mode={gameState.mode} 
+                          compact={false} 
+                        />
+                      </div>
+                      {gameState.mode === 75 
+                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} />
+                        : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(called)} toggleMark={() => {}} calledNumbers={called} />}
+                    </>
                   )}
 
                   {/* Botón de Inscripción si decide jugar */}
@@ -1206,9 +1220,18 @@ const PlayerPanel = () => {
               )
             ) : (
               playerData?.card && (
-                gameState.mode === 75 
-                  ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
-                  : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                    <PatternBadge 
+                      patternId={gameState.winningPattern || 'full'} 
+                      mode={gameState.mode} 
+                      compact={false} 
+                    />
+                  </div>
+                  {gameState.mode === 75 
+                    ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} />
+                    : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />}
+                </>
               )
             )}
           </div>
@@ -1407,6 +1430,7 @@ const PlayerPanel = () => {
             calledNumbers={called}
             mode={gameState.mode}
             currentUserId={userId}
+            winningPattern={gameState.winningPattern || 'full'}
           />
 
         </div>
@@ -1432,6 +1456,7 @@ const PlayerPanel = () => {
         calledNumbers={called}
         mode={gameState.mode}
         currentUserId={userId}
+        winningPattern={gameState.winningPattern || 'full'}
       />
 
       {/* MODAL DE BINGO INVÁLIDO CON TEMÁTICA VINTAGE CLÁSICA */}

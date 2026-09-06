@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Flame, Trophy, Sparkles, CheckCircle2 } from 'lucide-react';
-import { calculateCardProgress } from '../utils/bingo';
+import { calculateCardProgress, getPattern } from '../utils/bingo';
 
 const BingoRaceModal = ({
   isOpen,
@@ -8,7 +8,8 @@ const BingoRaceModal = ({
   players = [],
   calledNumbers = [],
   mode = 75,
-  currentUserId = null
+  currentUserId = null,
+  winningPattern = 'full'
 }) => {
   if (!isOpen) return null;
 
@@ -16,7 +17,7 @@ const BingoRaceModal = ({
   const activePlayers = players
     .filter(p => p.role !== 'spectator' && p.card)
     .map(p => {
-      const progress = calculateCardProgress(p.card, mode, calledNumbers);
+      const progress = calculateCardProgress(p.card, mode, calledNumbers, winningPattern);
       return {
         ...p,
         progress
@@ -103,7 +104,9 @@ const BingoRaceModal = ({
             fontStyle: 'italic',
             margin: '0.25rem 0 0'
           }}>
-            Quién está más cerca de cantar Bingo en la ronda actual
+            {winningPattern && winningPattern !== 'full' 
+              ? `Compitiendo por la ${getPattern(winningPattern).name}` 
+              : 'Quién está más cerca de cantar Bingo en la ronda actual'}
           </p>
         </div>
 

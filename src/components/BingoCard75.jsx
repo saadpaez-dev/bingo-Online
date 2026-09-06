@@ -1,7 +1,8 @@
 import React from 'react';
 import { Check, Star } from 'lucide-react';
+import { isCellInPattern } from '../utils/bingo';
 
-const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
+const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPattern = 'full' }) => {
   if (!card) return null;
 
   const headers = ['B', 'I', 'N', 'G', 'O'];
@@ -89,6 +90,8 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
             const isFree = cellValue === 'FREE';
             const isMarked = markedNumbers.has(cellValue) || isFree;
             const isCalled = calledNumbers.includes(cellValue) && !isMarked;
+            const inPattern = isCellInPattern(winningPattern, rIndex, cIndex);
+            const isPatternActive = winningPattern && winningPattern !== 'full';
             
             return (
               <div 
@@ -106,6 +109,7 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
                   fontSize: isFree ? '0.75rem' : '1.45rem',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
+                  opacity: (!isPatternActive || inPattern || isMarked || isCalled) ? 1 : 0.65,
                   
                   // Ficha sin marcar vs marcada (Sello de cera burdeos)
                   background: isFree 
@@ -114,6 +118,8 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
                     ? 'radial-gradient(circle at 35% 30%, #7E252D 0%, #5C1D24 65%, #380C11 100%)' 
                     : isCalled 
                     ? 'radial-gradient(circle at center, #FFF9EB 0%, #F5E9CC 100%)'
+                    : inPattern && isPatternActive
+                    ? 'radial-gradient(circle at 35% 35%, #FFFDF5 0%, #FDF4DE 65%, #F4E2BD 100%)'
                     : 'radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F7EEDB 65%, #EADBBE 100%)',
                   
                   color: (isMarked || isFree) ? 'var(--text-gold-emboss)' : '#2C1A0E',
@@ -124,6 +130,8 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
                     ? '2.5px solid var(--gold-primary)' 
                     : isCalled 
                     ? '2.5px solid var(--gold-brass)' 
+                    : (inPattern && isPatternActive)
+                    ? '2.5px solid #D4AF37'
                     : '2px solid #C4B18F',
                   
                   boxShadow: isFree 
@@ -132,9 +140,11 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers }) => {
                     ? '0 6px 14px rgba(60, 16, 21, 0.6), inset 0 2px 4px rgba(255,255,255,0.3)' 
                     : isCalled 
                     ? '0 0 12px rgba(212, 175, 55, 0.65)' 
+                    : (inPattern && isPatternActive)
+                    ? '0 0 9px rgba(212, 175, 55, 0.5), inset 0 1px 1px rgba(255,255,255,0.8)'
                     : '0 3px 6px rgba(0,0,0,0.18), inset 0 1px 1px rgba(255,255,255,0.8)',
                   
-                  transform: isMarked ? 'scale(1.04)' : 'scale(1)',
+                  transform: isMarked ? 'scale(1.04)' : (inPattern && isPatternActive) ? 'scale(1.02)' : 'scale(1)',
                   textShadow: (isMarked || isFree) ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 0 rgba(255,255,255,0.6)'
                 }}
               >

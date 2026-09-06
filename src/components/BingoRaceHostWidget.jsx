@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Flame, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
-import { calculateCardProgress } from '../utils/bingo';
+import { calculateCardProgress, getPattern } from '../utils/bingo';
 
 const BingoRaceHostWidget = ({
   players = [],
   calledNumbers = [],
   mode = 75,
-  currentUserId = null
+  currentUserId = null,
+  winningPattern = 'full'
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -15,7 +16,7 @@ const BingoRaceHostWidget = ({
     .filter(p => p.role !== 'spectator' && p.card)
     .map(p => ({
       ...p,
-      progress: calculateCardProgress(p.card, mode, calledNumbers)
+      progress: calculateCardProgress(p.card, mode, calledNumbers, winningPattern)
     }))
     .sort((a, b) => b.progress.percentage - a.progress.percentage);
 
@@ -51,7 +52,7 @@ const BingoRaceHostWidget = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Flame size={20} color="#E65100" />
           <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1rem', color: '#3A1015' }}>
-            Carrera hacia el Bingo (En Vivo)
+            Carrera hacia el Bingo {winningPattern && winningPattern !== 'full' ? `• ${getPattern(winningPattern).shortName}` : '(En Vivo)'}
           </span>
           {topLeader && (
             <span style={{

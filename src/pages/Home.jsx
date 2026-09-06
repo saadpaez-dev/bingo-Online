@@ -5,6 +5,8 @@ import { db, loginAnonymously } from '../firebase';
 import { Play, Trophy, Coins, DollarSign, ChevronDown, ChevronUp, Eye, Crown, Radio, Shield, Power } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import bgTable from '../assets/bg-table.jpg';
+import PatternBadge from '../components/PatternBadge';
+import { BINGO_PATTERNS } from '../utils/bingo';
 
 const FiligreeCorner = ({ position }) => (
   <svg 
@@ -55,6 +57,7 @@ const AbacusDivider = () => {
 
 const Home = () => {
   const [gameMode, setGameMode] = useState(75);
+  const [winningPattern, setWinningPattern] = useState('full');
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -272,6 +275,7 @@ const Home = () => {
         hostId: user.uid,
         status: 'waiting',
         mode: gameMode,
+        winningPattern: gameMode === 75 ? winningPattern : 'full',
         targetWins: Number(targetWins) || 3,
         paymentMode: !!paymentMode,
         cardPrice: paymentMode ? cardPrice : 'Gratis',
@@ -579,6 +583,82 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
+            {/* Selector de Dinámica de Victoria (Letras B-I-N-G-O) */}
+            {gameMode === 75 && (
+              <div style={{
+                marginBottom: '1.25rem',
+                padding: '0.85rem',
+                borderRadius: '10px',
+                background: 'linear-gradient(180deg, #FAF4E5 0%, #F5E9CC 100%)',
+                border: '1.5px solid var(--gold-brass)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+              }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontFamily: 'var(--font-serif)', 
+                  fontWeight: '800', 
+                  fontSize: '0.85rem', 
+                  color: '#2C1A0E', 
+                  marginBottom: '0.45rem',
+                  textAlign: 'left'
+                }}>
+                  🎯 Dinámica de Victoria:
+                </label>
+
+                {/* Botones de las letras B - I - N - G - O y Pleno */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(6, 1fr)',
+                  gap: '0.35rem',
+                  marginBottom: '0.65rem'
+                }}>
+                  {[
+                    { id: 'full', label: 'Pleno' },
+                    { id: 'letter_b', label: 'B' },
+                    { id: 'letter_i', label: 'I' },
+                    { id: 'letter_n', label: 'N' },
+                    { id: 'letter_g', label: 'G' },
+                    { id: 'letter_o', label: 'O' }
+                  ].map(p => {
+                    const isSelected = winningPattern === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setWinningPattern(p.id);
+                          playSound('pop');
+                        }}
+                        style={{
+                          padding: '0.4rem 0.2rem',
+                          borderRadius: '6px',
+                          border: isSelected ? '2px solid var(--gold-primary)' : '1px solid #C4B18F',
+                          background: isSelected 
+                            ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)' 
+                            : '#FFFFFF',
+                          color: isSelected ? 'var(--text-gold-emboss)' : '#2C1A0E',
+                          fontFamily: 'var(--font-serif)',
+                          fontWeight: '900',
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.3)' : 'none'
+                        }}
+                        title={p.label === 'Pleno' ? 'Cartón Lleno' : `Letra ${p.label}`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Vista previa de la letra seleccionada */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <PatternBadge patternId={winningPattern} mode={75} compact={false} />
+                </div>
+              </div>
+            )}
 
             {/* Opciones de Torneo y Pago (Expandible) */}
             <div style={{ marginBottom: '1.25rem', textAlign: 'center' }}>
