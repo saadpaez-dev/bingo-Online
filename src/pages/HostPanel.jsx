@@ -938,6 +938,90 @@ const HostPanel = () => {
                   </div>
                 )}
 
+                {/* Selector de Mecanismo de Extracción para la Ronda */}
+                <div style={{
+                  margin: '0 auto 1.5rem auto',
+                  maxWidth: '460px',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(180deg, #FAF4E5 0%, #F5E9CC 100%)',
+                  border: '2px solid var(--gold-brass)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0.55rem'
+                  }}>
+                    <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '0.92rem', color: '#2C1A0E' }}>
+                      🎰 Mecanismo de Sorteo:
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.78rem', 
+                      padding: '2px 8px', 
+                      borderRadius: '999px',
+                      background: 'var(--burgundy-primary)', 
+                      color: 'var(--text-gold-emboss)', 
+                      fontWeight: 'bold' 
+                    }}>
+                      {(gameState.drawMachine || 'roulette') === 'cage' ? 'Jaula Vintage' : 'Ruleta Vintage'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDrawMachine('roulette')}
+                      style={{
+                        padding: '0.6rem 0.85rem',
+                        borderRadius: '8px',
+                        border: (gameState.drawMachine || 'roulette') === 'roulette' ? '2.5px solid var(--gold-primary)' : '1.5px solid #C4B18F',
+                        background: (gameState.drawMachine || 'roulette') === 'roulette' ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)' : '#FFFFFF',
+                        color: (gameState.drawMachine || 'roulette') === 'roulette' ? '#FFF2C6' : '#2C1A0E',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '900',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem',
+                        boxShadow: (gameState.drawMachine || 'roulette') === 'roulette' ? '0 4px 10px rgba(0,0,0,0.3)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>🎡</span>
+                      <span>Ruleta Vintage</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDrawMachine('cage')}
+                      style={{
+                        padding: '0.6rem 0.85rem',
+                        borderRadius: '8px',
+                        border: gameState.drawMachine === 'cage' ? '2.5px solid var(--gold-primary)' : '1.5px solid #C4B18F',
+                        background: gameState.drawMachine === 'cage' ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)' : '#FFFFFF',
+                        color: gameState.drawMachine === 'cage' ? '#FFF2C6' : '#2C1A0E',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: '900',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem',
+                        boxShadow: gameState.drawMachine === 'cage' ? '0 4px 10px rgba(0,0,0,0.3)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>🎰</span>
+                      <span>Jaula Vintage</span>
+                    </button>
+                  </div>
+                </div>
+
                 {paymentMode && pendingPaymentsCount > 0 && (
                   <div style={{ 
                     backgroundColor: '#FFF4E5', 
@@ -986,72 +1070,105 @@ const HostPanel = () => {
             <div className="text-center" style={{ width: '100%' }}>
               
               {/* Selector de Máquina: Ruleta Vintage o Jaula Vintage */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.85rem' }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.45rem',
+                margin: '0 auto 1.15rem auto',
+                maxWidth: '440px',
+                padding: '0.65rem 1rem',
+                background: 'linear-gradient(180deg, #FAF4E5 0%, #EADBBE 100%)',
+                border: '2px solid var(--gold-brass)',
+                borderRadius: '14px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  color: 'var(--burgundy-primary)',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '0.85rem',
+                  fontWeight: '900',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
+                }}>
+                  <span>⚜️</span>
+                  <span>Mecanismo de Extracción en Vivo</span>
+                  <span>⚜️</span>
+                </div>
+
                 <div style={{
                   display: 'inline-flex',
-                  background: 'linear-gradient(180deg, #EADBBE 0%, #D4BE98 100%)',
-                  padding: '0.25rem',
+                  background: 'rgba(0,0,0,0.12)',
+                  padding: '0.3rem',
                   borderRadius: '999px',
-                  border: '1.5px solid var(--gold-brass)',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+                  border: '1.5px solid var(--gold-primary)',
+                  gap: '0.35rem',
+                  width: '100%'
                 }}>
                   <button
                     type="button"
                     onClick={() => handleSelectDrawMachine('roulette')}
                     style={{
-                      padding: '0.4rem 1.1rem',
+                      flex: 1,
+                      padding: '0.5rem 1rem',
                       borderRadius: '999px',
                       border: 'none',
                       cursor: 'pointer',
-                      fontSize: '0.86rem',
+                      fontSize: '0.92rem',
                       fontFamily: 'var(--font-serif)',
-                      fontWeight: '800',
+                      fontWeight: '900',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
+                      justifyContent: 'center',
+                      gap: '0.45rem',
                       background: (gameState.drawMachine || 'roulette') === 'roulette'
                         ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)'
-                        : 'transparent',
+                        : '#FFFDF9',
                       color: (gameState.drawMachine || 'roulette') === 'roulette'
-                        ? 'var(--text-gold-emboss)'
-                        : 'var(--text-vintage-dark)',
+                        ? '#FFF2C6'
+                        : '#3A1015',
                       boxShadow: (gameState.drawMachine || 'roulette') === 'roulette'
-                        ? '0 2px 6px rgba(0,0,0,0.35)'
-                        : 'none',
+                        ? '0 3px 8px rgba(0,0,0,0.35)'
+                        : '0 1px 2px rgba(0,0,0,0.1)',
                       transition: 'all 0.2s ease'
                     }}
                   >
                     <span>🎡</span>
-                    <span>Ruleta Vintage</span>
+                    <span>Ruleta</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSelectDrawMachine('cage')}
                     style={{
-                      padding: '0.4rem 1.1rem',
+                      flex: 1,
+                      padding: '0.5rem 1rem',
                       borderRadius: '999px',
                       border: 'none',
                       cursor: 'pointer',
-                      fontSize: '0.86rem',
+                      fontSize: '0.92rem',
                       fontFamily: 'var(--font-serif)',
-                      fontWeight: '800',
+                      fontWeight: '900',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
+                      justifyContent: 'center',
+                      gap: '0.45rem',
                       background: gameState.drawMachine === 'cage'
                         ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)'
-                        : 'transparent',
+                        : '#FFFDF9',
                       color: gameState.drawMachine === 'cage'
-                        ? 'var(--text-gold-emboss)'
-                        : 'var(--text-vintage-dark)',
+                        ? '#FFF2C6'
+                        : '#3A1015',
                       boxShadow: gameState.drawMachine === 'cage'
-                        ? '0 2px 6px rgba(0,0,0,0.35)'
-                        : 'none',
+                        ? '0 3px 8px rgba(0,0,0,0.35)'
+                        : '0 1px 2px rgba(0,0,0,0.1)',
                       transition: 'all 0.2s ease'
                     }}
                   >
                     <span>🎰</span>
-                    <span>Jaula Vintage</span>
+                    <span>Jaula</span>
                   </button>
                 </div>
               </div>
