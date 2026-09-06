@@ -9,6 +9,7 @@ import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
 import VintageRoulette from '../components/VintageRoulette';
+import VintageCage from '../components/VintageCage';
 import PatternBadge from '../components/PatternBadge';
 import { BINGO_PATTERNS } from '../utils/bingo';
 import bgTable from '../assets/bg-table.jpg';
@@ -387,6 +388,15 @@ const HostPanel = () => {
       console.error('Error sincronizando duración de ruleta:', e);
     }
   }, [gameId]);
+
+  const handleSelectDrawMachine = async (machine) => {
+    try {
+      const gameRef = doc(db, 'games', gameId);
+      await updateDoc(gameRef, { drawMachine: machine });
+    } catch (err) {
+      console.error('Error cambiando máquina de sorteo:', err);
+    }
+  };
 
   const toggleAutoDraw = () => {
     if (autoDrawInterval) {
@@ -974,37 +984,107 @@ const HostPanel = () => {
 
           {gameState.status === 'playing' && (
             <div className="text-center" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '1.2rem' }}>⚜️</span>
-                <h3 style={{
-                  fontFamily: 'var(--font-serif)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '2px',
-                  fontSize: '0.95rem',
-                  color: 'var(--text-vintage-dark)',
-                  fontWeight: '900',
-                  margin: 0
-                }}>
-                  Ruleta de Salón Vintage
-                </h3>
-                <span style={{ fontSize: '1.2rem' }}>⚜️</span>
-              </div>
               
-              {/* Ruleta interactiva de casino con motor de giro, bola animada y revelación central */}
-              <VintageRoulette
-                currentNumber={currentNumber}
-                currentLetter={currentLetter}
-                activeSpin={gameState.activeSpin || null}
-                onSpin={handleManualRouletteSpin}
-                disabled={autoDrawInterval !== null || isRouletteSpinning}
-                remainingCount={maxNumber - called.length}
-                gameMode={gameState.mode}
-                spinDuration={spinDuration}
-                lastSpinAt={gameState.lastSpinAt || null}
-                onDurationChange={handleDurationChange}
-              />
+              {/* Selector de Máquina: Ruleta Vintage o Jaula Vintage */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.85rem' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  background: 'linear-gradient(180deg, #EADBBE 0%, #D4BE98 100%)',
+                  padding: '0.25rem',
+                  borderRadius: '999px',
+                  border: '1.5px solid var(--gold-brass)',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawMachine('roulette')}
+                    style={{
+                      padding: '0.4rem 1.1rem',
+                      borderRadius: '999px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.86rem',
+                      fontFamily: 'var(--font-serif)',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      background: (gameState.drawMachine || 'roulette') === 'roulette'
+                        ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)'
+                        : 'transparent',
+                      color: (gameState.drawMachine || 'roulette') === 'roulette'
+                        ? 'var(--text-gold-emboss)'
+                        : 'var(--text-vintage-dark)',
+                      boxShadow: (gameState.drawMachine || 'roulette') === 'roulette'
+                        ? '0 2px 6px rgba(0,0,0,0.35)'
+                        : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>🎡</span>
+                    <span>Ruleta Vintage</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawMachine('cage')}
+                    style={{
+                      padding: '0.4rem 1.1rem',
+                      borderRadius: '999px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.86rem',
+                      fontFamily: 'var(--font-serif)',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      background: gameState.drawMachine === 'cage'
+                        ? 'linear-gradient(180deg, #7E252D 0%, #4D1318 100%)'
+                        : 'transparent',
+                      color: gameState.drawMachine === 'cage'
+                        ? 'var(--text-gold-emboss)'
+                        : 'var(--text-vintage-dark)',
+                      boxShadow: gameState.drawMachine === 'cage'
+                        ? '0 2px 6px rgba(0,0,0,0.35)'
+                        : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>🎰</span>
+                    <span>Jaula Vintage</span>
+                  </button>
+                </div>
+              </div>
 
-              {/* Ceder Tiro de la Biela a un Jugador */}
+              {gameState.drawMachine === 'cage' ? (
+                <VintageCage
+                  currentNumber={currentNumber}
+                  currentLetter={currentLetter}
+                  activeSpin={gameState.activeSpin || null}
+                  onSpin={handleManualRouletteSpin}
+                  disabled={autoDrawInterval !== null || isRouletteSpinning}
+                  remainingCount={maxNumber - called.length}
+                  gameMode={gameState.mode}
+                  spinDuration={spinDuration}
+                  lastSpinAt={gameState.lastSpinAt || null}
+                  onDurationChange={handleDurationChange}
+                />
+              ) : (
+                <VintageRoulette
+                  currentNumber={currentNumber}
+                  currentLetter={currentLetter}
+                  activeSpin={gameState.activeSpin || null}
+                  onSpin={handleManualRouletteSpin}
+                  disabled={autoDrawInterval !== null || isRouletteSpinning}
+                  remainingCount={maxNumber - called.length}
+                  gameMode={gameState.mode}
+                  spinDuration={spinDuration}
+                  lastSpinAt={gameState.lastSpinAt || null}
+                  onDurationChange={handleDurationChange}
+                />
+              )}
+
+              {/* Ceder Tiro de la Biela o Jaula a un Jugador */}
               <div style={{ 
                 marginTop: '1.25rem',
                 background: 'linear-gradient(180deg, #FAF4E5 0%, #E6D2AE 100%)', 
@@ -1018,7 +1098,7 @@ const HostPanel = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span style={{ fontSize: '1.2rem' }}>🎲</span>
                     <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '0.92rem', color: '#3A1015' }}>
-                      Ceder Turno de la Biela a un Jugador
+                      Ceder Turno del Bolillero a un Jugador
                     </span>
                   </div>
                   {gameState.assignedSpinner && gameState.assignedSpinner.remainingSpins > 0 && (

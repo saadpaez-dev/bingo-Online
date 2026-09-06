@@ -14,6 +14,7 @@ import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, Shield
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import VintageRoulette from '../components/VintageRoulette';
+import VintageCage from '../components/VintageCage';
 import bgTable from '../assets/bg-table.jpg';
 
 const FiligreeCorner = ({ position }) => (
@@ -1095,14 +1096,16 @@ const PlayerPanel = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ fontSize: '1.6rem' }}>🎲</span>
                 <div>
-                  <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: '900', color: '#FFF8EA' }}>
-                    ¡El Anfitrión te ha concedido el tiro de la Biela!
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.25rem', color: '#FFF' }}>
+                    {gameState.drawMachine === 'cage' 
+                      ? '¡El Anfitrión te ha concedido el tiro de la Jaula!' 
+                      : '¡El Anfitrión te ha concedido el tiro de la Biela!'}
                   </h3>
                   <p style={{ margin: 0, fontSize: '0.92rem', color: 'var(--gold-highlight)', fontWeight: 'bold' }}>
-                    Tienes {gameState.assignedSpinner.remainingSpins} {gameState.assignedSpinner.remainingSpins === 1 ? 'tiro de Ruleta disponible' : 'tiros de Ruleta disponibles'}
+                    Tienes {gameState.assignedSpinner.remainingSpins} {gameState.assignedSpinner.remainingSpins === 1 ? 'tiro disponible' : 'tiros disponibles'}
                   </p>
                 </div>
-                <span style={{ fontSize: '1.6rem' }}>🎲</span>
+                <span style={{ fontSize: '1.6rem' }}>{gameState.drawMachine === 'cage' ? '🎰' : '🎲'}</span>
               </div>
 
               <button
@@ -1121,8 +1124,12 @@ const PlayerPanel = () => {
                   cursor: gameState.activeSpin !== null ? 'not-allowed' : 'pointer'
                 }}
               >
-                <span style={{ fontSize: '1.3rem' }}>🎰</span>
-                <span>{gameState.activeSpin !== null ? 'Girando la Biela...' : '¡Girar la Ruleta Ahora!'}</span>
+                <span style={{ fontSize: '1.3rem' }}>{gameState.drawMachine === 'cage' ? '🎰' : '🎡'}</span>
+                <span>
+                  {gameState.activeSpin !== null 
+                    ? (gameState.drawMachine === 'cage' ? 'Girando la Jaula...' : 'Girando la Biela...') 
+                    : (gameState.drawMachine === 'cage' ? '¡Girar la Jaula Ahora!' : '¡Girar la Ruleta Ahora!')}
+                </span>
               </button>
             </div>
           )}
@@ -1403,17 +1410,31 @@ const PlayerPanel = () => {
                             <span>⚜️</span>
                           </div>
 
-                          <VintageRoulette
-                            currentNumber={currentNumber}
-                            currentLetter={currentLetter}
-                            activeSpin={gameState.activeSpin || null}
-                            remainingCount={maxNumber - called.length}
-                            gameMode={gameState.mode}
-                            spinDuration={gameState.spinDuration || 3}
-                            lastSpinAt={gameState.lastSpinAt || null}
-                            readOnly={true}
-                            onSpinComplete={handleRouletteComplete}
-                          />
+                          {gameState.drawMachine === 'cage' ? (
+                            <VintageCage
+                              currentNumber={currentNumber}
+                              currentLetter={currentLetter}
+                              activeSpin={gameState.activeSpin || null}
+                              remainingCount={maxNumber - called.length}
+                              gameMode={gameState.mode}
+                              spinDuration={gameState.spinDuration || 3}
+                              lastSpinAt={gameState.lastSpinAt || null}
+                              readOnly={true}
+                              onSpinComplete={handleRouletteComplete}
+                            />
+                          ) : (
+                            <VintageRoulette
+                              currentNumber={currentNumber}
+                              currentLetter={currentLetter}
+                              activeSpin={gameState.activeSpin || null}
+                              remainingCount={maxNumber - called.length}
+                              gameMode={gameState.mode}
+                              spinDuration={gameState.spinDuration || 3}
+                              lastSpinAt={gameState.lastSpinAt || null}
+                              readOnly={true}
+                              onSpinComplete={handleRouletteComplete}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
@@ -1519,17 +1540,31 @@ const PlayerPanel = () => {
                         <span>⚜️</span>
                       </div>
 
-                      <VintageRoulette
-                        currentNumber={currentNumber}
-                        currentLetter={currentLetter}
-                        activeSpin={gameState.activeSpin || null}
-                        remainingCount={maxNumber - called.length}
-                        gameMode={gameState.mode}
-                        spinDuration={gameState.spinDuration || 3}
-                        lastSpinAt={gameState.lastSpinAt || null}
-                        readOnly={true}
-                        onSpinComplete={handleRouletteComplete}
-                      />
+                      {gameState.drawMachine === 'cage' ? (
+                        <VintageCage
+                          currentNumber={currentNumber}
+                          currentLetter={currentLetter}
+                          activeSpin={gameState.activeSpin || null}
+                          remainingCount={maxNumber - called.length}
+                          gameMode={gameState.mode}
+                          spinDuration={gameState.spinDuration || 3}
+                          lastSpinAt={gameState.lastSpinAt || null}
+                          readOnly={true}
+                          onSpinComplete={handleRouletteComplete}
+                        />
+                      ) : (
+                        <VintageRoulette
+                          currentNumber={currentNumber}
+                          currentLetter={currentLetter}
+                          activeSpin={gameState.activeSpin || null}
+                          remainingCount={maxNumber - called.length}
+                          gameMode={gameState.mode}
+                          spinDuration={gameState.spinDuration || 3}
+                          lastSpinAt={gameState.lastSpinAt || null}
+                          readOnly={true}
+                          onSpinComplete={handleRouletteComplete}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -1691,10 +1726,10 @@ const PlayerPanel = () => {
                       alignItems: 'center',
                       gap: '0.35rem'
                     }}
-                    title="Ver la ruleta y zoom proyectados sobre el cartón"
+                    title="Ver la animación proyectada sobre el cartón"
                   >
-                    <span>🎡</span>
-                    <span>Proyectar Ruleta en Cartón</span>
+                    <span>{gameState.drawMachine === 'cage' ? '🎰' : '🎡'}</span>
+                    <span>{gameState.drawMachine === 'cage' ? 'Proyectar Jaula en Cartón' : 'Proyectar Ruleta en Cartón'}</span>
                   </button>
                 </div>
               ) : (
@@ -1705,7 +1740,9 @@ const PlayerPanel = () => {
                   color: 'var(--text-vintage-muted)',
                   fontStyle: 'italic'
                 }}>
-                  Esperando el primer giro de la biela...
+                  {gameState.drawMachine === 'cage' 
+                    ? 'Esperando el primer giro de la jaula...' 
+                    : 'Esperando el primer giro de la biela...'}
                 </div>
               )}
 
