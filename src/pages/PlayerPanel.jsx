@@ -60,7 +60,8 @@ const PlayerPanel = () => {
   });
   const [customAvatar, setCustomAvatar] = useState(null);
 
-  const [lastCalledCount, setLastCalledCount] = useState(0);
+  const lastCalledCountRef = useRef(-1);
+  const gameStateRef = useRef(null);
   const [allPlayers, setAllPlayers] = useState([]);
   const [showRaceModal, setShowRaceModal] = useState(false);
   const [showRouletteProjection, setShowRouletteProjection] = useState(false);
@@ -96,18 +97,38 @@ const PlayerPanel = () => {
     });
   }, [allPlayers, userId, playerData?.card, markedNumbers]);
 
-  // Inicialización y auto-reconexión si el jugador ya estaba registrado en la sala
+  // Mantener referencia actualizada de gameState para efectos
   useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Inicialización y auto-reconexión si el jugador ya estaba registrado en la sala (solo al montar sala)
+  useEffect(() => {
+    if (!gameId) return;
+    let isCancelled = false;
+
     loginAnonymously().then(async (user) => {
+      if (isCancelled) return;
       setUserId(user.uid);
       try {
         const playerSnap = await getDoc(doc(db, 'games', gameId, 'players', user.uid));
-        if (playerSnap.exists()) {
+        if (playerSnap.exists() && !isCancelled) {
           const pData = playerSnap.data();
           setName(pData.name || '');
           setPlayerData(pData);
-          if (Array.isArray(pData.markedNumbers)) {
-            setMarkedNumbers(new Set(pData.markedNumbers));
+          if (Array.isArray(pData.markedNumbers) && pData.markedNumbers.length > 0) {
+            setMarkedNumbers(new Set(pData.markedNumbers.map(n => Number(n)).filter(n => !isNaN(n))));
+          } else {
+            // Intentar restaurar desde respaldo local de la sesión
+            try {
+              const cached = localStorage.getItem(`bingo_marked_${gameId}_${user.uid}`);
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setMarkedNumbers(new Set(parsed.map(n => Number(n)).filter(n => !isNaN(n))));
+                }
+              }
+            } catch (e) {}
           }
           setHasJoined(true);
           localStorage.setItem('bingo_player_active_game', gameId);
@@ -122,15 +143,28 @@ const PlayerPanel = () => {
       }
     });
 
+    return () => {
+      isCancelled = true;
+    };
+  }, [gameId]);
+
+  // Escucha del estado del juego en tiempo real (games/{gameId})
+  useEffect(() => {
+    if (!gameId) return;
+
     const gameRef = doc(db, 'games', gameId);
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setGameState(data);
         
-        if (data.calledNumbers && data.calledNumbers.length > lastCalledCount && data.status === 'playing') {
-          playSound('pop');
-          setLastCalledCount(data.calledNumbers.length);
+        if (data.calledNumbers && data.status === 'playing') {
+          if (lastCalledCountRef.current === -1) {
+            lastCalledCountRef.current = data.calledNumbers.length;
+          } else if (data.calledNumbers.length > lastCalledCountRef.current) {
+            playSound('pop');
+            lastCalledCountRef.current = data.calledNumbers.length;
+          }
         }
 
         if (data.status === 'finished' && data.winners?.includes(name)) {
@@ -142,13 +176,24 @@ const PlayerPanel = () => {
           winAnimationPlayedRef.current = false;
         }
 
+        // Si el anfitrión inició nueva ronda o limpió balotas (waiting con 0 balotas)
+        if (data.status === 'waiting' && (!data.calledNumbers || data.calledNumbers.length === 0)) {
+          setMarkedNumbers(new Set());
+          lastCalledCountRef.current = 0;
+          if (userId) {
+            try {
+              localStorage.removeItem(`bingo_marked_${gameId}_${userId}`);
+            } catch (e) {}
+          }
+        }
+
       } else {
         setErrorMsg('La sala no existe.');
       }
     });
 
     return () => unsubscribe();
-  }, [gameId, name, lastCalledCount, playSound]);
+  }, [gameId, name, playSound, triggerWinAnimation, userId]);
 
   // Listener de los datos del jugador en tiempo real
   useEffect(() => {
@@ -160,9 +205,12 @@ const PlayerPanel = () => {
         const data = docSnap.data();
         setPlayerData(data);
 
-        // Si el anfitrión inició nueva ronda o limpió fichas
-        if (Array.isArray(data.markedNumbers) && data.markedNumbers.length === 0 && markedNumbers.size > 0 && gameState?.status === 'waiting') {
+        // Si el anfitrión inició nueva ronda o limpió fichas en estado 'waiting'
+        if (Array.isArray(data.markedNumbers) && data.markedNumbers.length === 0 && gameStateRef.current?.status === 'waiting') {
           setMarkedNumbers(new Set());
+          try {
+            localStorage.removeItem(`bingo_marked_${gameId}_${userId}`);
+          } catch (e) {}
         }
 
         // Sonido triunfal de desbloqueo cuando el anfitrión aprueba la inscripción
@@ -413,10 +461,15 @@ const PlayerPanel = () => {
     if (gameState.status !== 'waiting') return;
     const newCard = gameState.mode === 75 ? generateCard75() : generateCard90();
     setMarkedNumbers(new Set());
-    await updateDoc(doc(db, 'games', gameId, 'players', userId), {
-      card: newCard,
-      markedNumbers: []
-    });
+    if (userId && gameId) {
+      try {
+        localStorage.removeItem(`bingo_marked_${gameId}_${userId}`);
+      } catch (e) {}
+      await updateDoc(doc(db, 'games', gameId, 'players', userId), {
+        card: newCard,
+        markedNumbers: []
+      });
+    }
   };
 
   const toggleMark = (num) => {
@@ -424,7 +477,7 @@ const PlayerPanel = () => {
     
     playSound('draw');
     const numericVal = typeof num === 'string' && !isNaN(Number(num)) ? Number(num) : num;
-    let nextList = [];
+    
     setMarkedNumbers(prev => {
       const newSet = new Set(prev);
       if (newSet.has(numericVal)) {
@@ -436,15 +489,21 @@ const PlayerPanel = () => {
       } else {
         newSet.add(numericVal);
       }
-      nextList = Array.from(newSet).map(n => Number(n)).filter(n => !isNaN(n));
+      const nextList = Array.from(newSet).map(n => Number(n)).filter(n => !isNaN(n));
+
+      // Guardar de inmediato con los datos reales calculados
+      if (userId && gameId) {
+        try {
+          localStorage.setItem(`bingo_marked_${gameId}_${userId}`, JSON.stringify(nextList));
+        } catch (e) {}
+
+        updateDoc(doc(db, 'games', gameId, 'players', userId), {
+          markedNumbers: nextList
+        }).catch(e => console.error('Error guardando ficha marcada:', e));
+      }
+
       return newSet;
     });
-
-    if (userId && gameId) {
-      updateDoc(doc(db, 'games', gameId, 'players', userId), {
-        markedNumbers: nextList
-      }).catch(e => console.error('Error guardando ficha marcada:', e));
-    }
   };
 
   const claimBingo = async () => {
