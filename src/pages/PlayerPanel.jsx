@@ -10,7 +10,7 @@ import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceModal from '../components/BingoRaceModal';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
-import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight, Home, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import VintageRoulette from '../components/VintageRoulette';
@@ -70,6 +70,7 @@ const PlayerPanel = () => {
   const [invalidBingoModal, setInvalidBingoModal] = useState({ show: false, message: '', title: '' });
   const winAnimationPlayedRef = useRef(false);
   const prevApprovedRef = useRef(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const triggerWinAnimation = useCallback(() => {
     playSound('win');
@@ -1675,34 +1676,68 @@ const PlayerPanel = () => {
           {/* REACCIONES Y BOTONES DE ACCIÓN */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '1rem', width: '100%' }}>
             
-            {/* Barra de Reacciones para el Live Streaming */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.85rem', 
-              padding: '0.45rem 1.25rem', 
-              borderRadius: '999px',
-              background: 'linear-gradient(180deg, #F4E7CB 0%, #E6D2AE 100%)',
-              border: '2px solid var(--gold-brass)',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-            }}>
-              {['👏', '😂', '😲', '🎉', '❤️', '🍀'].map(emoji => (
-                <button 
-                  key={emoji}
-                  onClick={() => sendReaction(emoji)}
-                  style={{
-                    background: 'none', 
-                    border: 'none', 
-                    fontSize: '1.6rem', 
-                    cursor: 'pointer',
-                    transition: 'transform 0.15s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
-                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-                  title={`Enviar ${emoji} al streaming`}
-                >
-                  {emoji}
-                </button>
-              ))}
+            {/* Fila de Reacciones y Botón de Mensajes / Chat al lado */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {/* Barra de Reacciones para el Live Streaming */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.85rem', 
+                padding: '0.45rem 1.25rem', 
+                borderRadius: '999px',
+                background: 'linear-gradient(180deg, #F4E7CB 0%, #E6D2AE 100%)',
+                border: '2px solid var(--gold-brass)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                alignItems: 'center'
+              }}>
+                {['👏', '😂', '😲', '🎉', '❤️', '🍀'].map(emoji => (
+                  <button 
+                    key={emoji}
+                    onClick={() => sendReaction(emoji)}
+                    style={{
+                      background: 'none', 
+                      border: 'none', 
+                      fontSize: '1.6rem', 
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s',
+                      lineHeight: 1
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
+                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    title={`Enviar ${emoji} al streaming`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              {/* Botón de Chat de la Mesa al lado de la barra de emojis */}
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(prev => !prev)}
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isChatOpen 
+                    ? 'radial-gradient(circle at 35% 30%, #D4AF37 0%, #AA820A 100%)' 
+                    : 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 65%, var(--burgundy-dark) 100%)',
+                  border: '2.5px solid var(--gold-primary)',
+                  color: isChatOpen ? '#3A1015' : 'var(--text-gold-emboss)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
+                }}
+                onMouseOver={e => (e.currentTarget.style.transform = 'scale(1.1)')}
+                onMouseOut={e => (e.currentTarget.style.transform = 'scale(1)')}
+                title={isChatOpen ? "Cerrar Chat de la Mesa" : "Abrir Chat de la Mesa y Mensajes"}
+                aria-label="Abrir Mensajes"
+              >
+                <MessageCircle size={22} />
+              </button>
             </div>
 
             {/* Botones de acción del jugador */}
@@ -1945,6 +1980,9 @@ const PlayerPanel = () => {
       <ChatBox
         gameId={gameId}
         defaultSide="left"
+        isOpen={isChatOpen}
+        onToggle={setIsChatOpen}
+        hideFloatingButton={true}
         currentUser={{
           name: name,
           avatar: playerData?.avatar || avatar,

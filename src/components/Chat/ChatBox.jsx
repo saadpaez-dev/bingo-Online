@@ -49,8 +49,23 @@ const QUICK_CATEGORIES = {
   ]
 };
 
-const ChatBox = ({ gameId, currentUser, defaultSide = 'left' }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const ChatBox = ({ 
+  gameId, 
+  currentUser, 
+  defaultSide = 'left',
+  isOpen: externalIsOpen,
+  onToggle: externalOnToggle,
+  hideFloatingButton = false
+}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = (nextVal) => {
+    if (externalOnToggle) {
+      externalOnToggle(typeof nextVal === 'function' ? nextVal(isOpen) : nextVal);
+    } else {
+      setInternalIsOpen(nextVal);
+    }
+  };
   const [inputMessage, setInputMessage] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [isPhrasesExpanded, setIsPhrasesExpanded] = useState(false);
@@ -213,7 +228,7 @@ const ChatBox = ({ gameId, currentUser, defaultSide = 'left' }) => {
   return (
     <>
       {/* Botón flotante para abrir (ubicado en el lado configurado, por defecto a la izquierda) */}
-      {!isOpen && (
+      {!isOpen && !hideFloatingButton && (
         <button
           onClick={() => setIsOpen(true)}
           style={{
