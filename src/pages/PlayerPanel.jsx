@@ -10,7 +10,7 @@ import ChatBox from '../components/Chat/ChatBox';
 import LiveCommentsOverlay from '../components/Chat/LiveCommentsOverlay';
 import BingoRaceModal from '../components/BingoRaceModal';
 import BingoRaceHostWidget from '../components/BingoRaceHostWidget';
-import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, Flame, ChevronLeft, ChevronRight, Home, MessageCircle } from 'lucide-react';
+import { Trophy, RefreshCw, Image as ImageIcon, Lock, CheckCircle, Clock, ShieldCheck, CreditCard, Eye, EyeOff, Flame, ChevronLeft, ChevronRight, Home, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useSettings } from '../context/SettingsContext';
 import VintageRoulette from '../components/VintageRoulette';
@@ -71,6 +71,24 @@ const PlayerPanel = () => {
   const winAnimationPlayedRef = useRef(false);
   const prevApprovedRef = useRef(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showDrawAnimation, setShowDrawAnimation] = useState(() => {
+    const saved = localStorage.getItem('bingo_show_draw_animation');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleShowDrawAnimation = () => {
+    playSound('pop');
+    setShowDrawAnimation(prev => {
+      const next = !prev;
+      localStorage.setItem('bingo_show_draw_animation', String(next));
+      if (!next) {
+        setShowRouletteProjection(false);
+      } else if (gameState?.activeSpin && gameState.activeSpin.number) {
+        setShowRouletteProjection(true);
+      }
+      return next;
+    });
+  };
 
   const triggerWinAnimation = useCallback(() => {
     playSound('win');
@@ -295,13 +313,14 @@ const PlayerPanel = () => {
   // Proyección de la Ruleta sobre el Cartón cuando hay un giro en tiempo real
   useEffect(() => {
     if (gameState?.activeSpin && gameState.activeSpin.number) {
+      if (!showDrawAnimation) return; // Solo proyectar automáticamente si el jugador lo tiene activado
       if (hideProjectionTimerRef.current) {
         clearTimeout(hideProjectionTimerRef.current);
         hideProjectionTimerRef.current = null;
       }
       setShowRouletteProjection(true);
     }
-  }, [gameState?.activeSpin]);
+  }, [gameState?.activeSpin, showDrawAnimation]);
 
   useEffect(() => {
     return () => {
@@ -1119,6 +1138,29 @@ const PlayerPanel = () => {
         {/* Marcador de Victorias del Jugador en el Torneo o Modo Observador y Botón Carrera */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           
+          {/* Botón para alternar si se proyecta la Ruleta o Jaula */}
+          <button
+            onClick={toggleShowDrawAnimation}
+            className="vintage-brass-plaque animate-pop"
+            style={{
+              cursor: 'pointer',
+              padding: '0.4rem 0.75rem',
+              fontSize: '0.82rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: showDrawAnimation ? '#FAF4E5' : '#EFE1C6',
+              color: '#3A1015',
+              border: showDrawAnimation ? '1px solid var(--gold-primary)' : '1px dashed #8C6B23'
+            }}
+            title={showDrawAnimation ? `Animación activa: Se proyecta la ${gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'} al salir cada balota. Clic para ocultar.` : `Animación desactivada: Solo verás tu cartón directamente sin interrupciones. Clic para activar.`}
+          >
+            {showDrawAnimation ? <Eye size={15} color="#15803D" /> : <EyeOff size={15} color="#8D6E63" />}
+            <span>
+              {gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'}: {showDrawAnimation ? 'Visible' : 'Oculta'}
+            </span>
+          </button>
+
           {/* Botón para abrir la Carrera hacia el Bingo (Consultar rivales y cerrar) */}
           {playingPlayers.length > 0 && (
             <button
@@ -1565,12 +1607,39 @@ const PlayerPanel = () => {
             ) : (
               playerData?.card && (
                 <div style={{ position: 'relative', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                     <PatternBadge 
                       patternId={gameState.winningPattern || 'full'} 
                       mode={gameState.mode} 
                       compact={false} 
                     />
+                    {gameState.activeSpin && gameState.activeSpin.number && !showRouletteProjection && (
+                      <button
+                        type="button"
+                        onClick={() => setShowRouletteProjection(true)}
+                        className="animate-pop"
+                        style={{
+                          padding: '0.35rem 0.8rem',
+                          borderRadius: '999px',
+                          background: 'radial-gradient(ellipse at center, #D4AF37 0%, #AA820A 100%)',
+                          color: '#3A1015',
+                          border: '1.5px solid var(--gold-primary)',
+                          fontWeight: 'bold',
+                          fontSize: '0.8rem',
+                          fontFamily: 'var(--font-serif)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                        }}
+                        title={`Ver la animación de la ${gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'} en vivo`}
+                      >
+                        <span>{gameState.drawMachine === 'cage' ? '🎰' : '🎡'}</span>
+                        <span>Ver Sorteo en Vivo</span>
+                        <Eye size={14} />
+                      </button>
+                    )}
                   </div>
                   {gameState.mode === 75 
                     ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
@@ -1600,6 +1669,34 @@ const PlayerPanel = () => {
                         animation: 'fadeIn 0.25s ease'
                       }}
                     >
+                      {/* Botón para desactivar que se vuelva a proyectar automáticamente */}
+                      <button
+                        type="button"
+                        onClick={toggleShowDrawAnimation}
+                        style={{
+                          position: 'absolute',
+                          top: '10px',
+                          left: '10px',
+                          background: 'rgba(0,0,0,0.65)',
+                          border: '1.5px solid var(--gold-brass)',
+                          borderRadius: '20px',
+                          padding: '4px 10px',
+                          color: '#FFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          cursor: 'pointer',
+                          zIndex: 110,
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-serif)',
+                          fontWeight: 'bold'
+                        }}
+                        title="Desactivar proyección automática para próximas balotas"
+                      >
+                        <EyeOff size={13} color="#E0C097" />
+                        <span>No proyectar más</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => setShowRouletteProjection(false)}
