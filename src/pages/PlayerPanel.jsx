@@ -71,6 +71,17 @@ const PlayerPanel = () => {
   const winAnimationPlayedRef = useRef(false);
   const prevApprovedRef = useRef(false);
 
+  const triggerWinAnimation = useCallback(() => {
+    playSound('win');
+    // Disparo único y liviano de confeti
+    confetti({
+      particleCount: 70,
+      spread: 65,
+      origin: { y: 0.6 },
+      colors: ['#5C1D24', '#D4AF37', '#2E7D32', '#F4E7CB']
+    });
+  }, [playSound]);
+
   // Listener de todos los jugadores de la sala (para la Carrera al Bingo y para el Observador)
   useEffect(() => {
     if (!gameId) return;
@@ -279,17 +290,6 @@ const PlayerPanel = () => {
     localStorage.removeItem('bingo_player_active_game');
     navigate('/');
   };
-
-  const triggerWinAnimation = useCallback(() => {
-    playSound('win');
-    // Disparo único y liviano de confeti
-    confetti({
-      particleCount: 70,
-      spread: 65,
-      origin: { y: 0.6 },
-      colors: ['#5C1D24', '#D4AF37', '#2E7D32', '#F4E7CB']
-    });
-  }, [playSound]);
 
   // Proyección de la Ruleta sobre el Cartón cuando hay un giro en tiempo real
   useEffect(() => {
