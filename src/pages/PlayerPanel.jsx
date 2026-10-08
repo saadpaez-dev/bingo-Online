@@ -1660,7 +1660,7 @@ const PlayerPanel = () => {
                         />
                       </div>
                       {gameState.mode === 75 
-                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(observedPlayer.markedNumbers || [])} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
+                        ? <BingoCard75 card={observedPlayer.card} markedNumbers={new Set(observedPlayer.markedNumbers || [])} toggleMark={() => {}} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} paymentMode={gameState.paymentMode} />
                         : <BingoCard90 grid={observedPlayer.card} markedNumbers={new Set(observedPlayer.markedNumbers || [])} toggleMark={() => {}} calledNumbers={called} />}
 
                       {/* Overlay de Proyección de la Ruleta y Zoom de la Biela sobre el Cartón */}
@@ -1817,7 +1817,7 @@ const PlayerPanel = () => {
                     )}
                   </div>
                   {gameState.mode === 75 
-                    ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} />
+                    ? <BingoCard75 card={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} winningPattern={gameState.winningPattern || 'full'} showPatternGuide={gameState.status === 'waiting'} paymentMode={gameState.paymentMode} />
                     : <BingoCard90 grid={playerData.card} markedNumbers={markedNumbers} toggleMark={toggleMark} calledNumbers={called} />}
 
                   {/* Overlay de Proyección de la Ruleta y Zoom de la Biela sobre el Cartón */}

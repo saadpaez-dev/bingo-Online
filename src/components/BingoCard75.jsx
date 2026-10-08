@@ -2,7 +2,51 @@ import React from 'react';
 import { Check, Star } from 'lucide-react';
 import { isCellInPattern } from '../utils/bingo';
 
-const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPattern = 'full', showPatternGuide = false }) => {
+// Billete de dólar estilo grabado vintage para partidas de pago
+const VintageDollarBill = () => (
+  <svg 
+    viewBox="0 0 60 32" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ 
+      width: '84%', 
+      maxWidth: '48px', 
+      height: 'auto',
+      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
+      animation: 'starPulse 2.5s infinite ease-in-out'
+    }}
+  >
+    {/* Fondo del billete verde grabado con borde dorado */}
+    <rect x="1" y="1" width="58" height="30" rx="3.5" fill="#173E20" stroke="#C59B27" strokeWidth="1.6" />
+    <rect x="3.5" y="3.5" width="53" height="25" rx="2.5" fill="#204E2B" stroke="#77B886" strokeWidth="0.8" strokeDasharray="2 1" />
+    
+    {/* Motivos en las esquinas con mini signo $ */}
+    <text x="6.5" y="9.5" fill="#FFF1C5" fontSize="5.5" fontWeight="900" fontFamily="serif" textAnchor="middle">$</text>
+    <text x="53.5" y="9.5" fill="#FFF1C5" fontSize="5.5" fontWeight="900" fontFamily="serif" textAnchor="middle">$</text>
+    <text x="6.5" y="27" fill="#FFF1C5" fontSize="5.5" fontWeight="900" fontFamily="serif" textAnchor="middle">$</text>
+    <text x="53.5" y="27" fill="#FFF1C5" fontSize="5.5" fontWeight="900" fontFamily="serif" textAnchor="middle">$</text>
+    
+    {/* Medallón central grabado en relieve */}
+    <ellipse cx="30" cy="16" rx="14.5" ry="10" fill="#12321A" stroke="#C59B27" strokeWidth="1.2" />
+    <ellipse cx="30" cy="16" rx="12.5" ry="8" fill="#1B4525" stroke="#5EA46E" strokeWidth="0.7" />
+    
+    {/* Signo $ central en relieve de oro vintage */}
+    <text 
+      x="30" 
+      y="21" 
+      fill="#FFE082" 
+      fontSize="14" 
+      fontWeight="900" 
+      fontFamily="serif" 
+      textAnchor="middle"
+      style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.85))' }}
+    >
+      $
+    </text>
+  </svg>
+);
+
+const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPattern = 'full', showPatternGuide = false, paymentMode = false }) => {
   if (!card) return null;
 
   const headers = ['B', 'I', 'N', 'G', 'O'];
@@ -126,7 +170,7 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPa
                   color: (isMarked || isFree) ? 'var(--text-gold-emboss)' : '#2C1A0E',
                   
                   border: isFree 
-                    ? '2px solid #573E11'
+                    ? (paymentMode ? '2px solid #173E20' : '2px solid #573E11')
                     : isMarked 
                     ? '2.5px solid var(--gold-primary)' 
                     : isCalled 
@@ -136,7 +180,9 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPa
                     : '2px solid #C4B18F',
                   
                   boxShadow: isFree 
-                    ? '0 4px 10px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.5)'
+                    ? (paymentMode 
+                        ? '0 4px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.6)' 
+                        : '0 4px 10px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.5)')
                     : isMarked 
                     ? '0 6px 14px rgba(60, 16, 21, 0.6), inset 0 2px 4px rgba(255,255,255,0.3)' 
                     : isCalled 
@@ -149,12 +195,28 @@ const BingoCard75 = ({ card, markedNumbers, toggleMark, calledNumbers, winningPa
                   textShadow: (isMarked || isFree) ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 0 rgba(255,255,255,0.6)'
                 }}
               >
-                {/* Casilla Central GRATIS */}
+                {/* Casilla Central GRATIS (Modo Tradicional) o BILLETE DE DÓLAR (Modo Pago) */}
                 {isFree ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1' }}>
-                    <Star size={20} fill="#FFF1C5" color="#573E11" style={{ animation: 'starPulse 2s infinite' }} />
-                    <span style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '1px', marginTop: '2px', color: '#3A2006' }}>GRATIS</span>
-                  </div>
+                  paymentMode ? (
+                    <div 
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        width: '100%',
+                        height: '100%'
+                      }}
+                      title="Casilla comodín (Partida de Pago)"
+                    >
+                      <VintageDollarBill />
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1' }}>
+                      <Star size={20} fill="#FFF1C5" color="#573E11" style={{ animation: 'starPulse 2s infinite' }} />
+                      <span style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '1px', marginTop: '2px', color: '#3A2006' }}>GRATIS</span>
+                    </div>
+                  )
                 ) : (
                   <span>{cellValue}</span>
                 )}
