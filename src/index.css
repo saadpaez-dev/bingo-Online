@@ -206,6 +206,38 @@ body::before {
   50% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255, 241, 197, 0.9)); }
 }
 
+/* Ocultar barra de scroll en elementos interactivos sin perder el scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Barra de scroll vintage sutil y elegante */
+.vintage-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.vintage-scrollbar::-webkit-scrollbar-track {
+  background: rgba(92, 29, 36, 0.08);
+  border-radius: 4px;
+}
+.vintage-scrollbar::-webkit-scrollbar-thumb {
+  background: #C59B27;
+  border-radius: 4px;
+}
+.vintage-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+.vintage-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #C59B27 rgba(92, 29, 36, 0.08);
+}
+
 /* =========================================================
    TÍTULOS VINTAGE
    ========================================================= */

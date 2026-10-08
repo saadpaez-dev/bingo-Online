@@ -198,7 +198,7 @@ const ChatBox = ({
         top: `${dragPos.y}px`,
         bottom: 'auto',
         right: 'auto',
-        width: 'min(410px, calc(100vw - 24px))',
+        width: 'min(435px, calc(100vw - 24px))',
         padding: 0,
         zIndex: 1000,
         display: 'flex',
@@ -213,7 +213,7 @@ const ChatBox = ({
         position: 'fixed',
         bottom: '24px',
         ...(dockSide === 'left' ? { left: '24px', right: 'auto' } : { right: '24px', left: 'auto' }),
-        width: 'min(410px, calc(100vw - 32px))',
+        width: 'min(435px, calc(100vw - 32px))',
         padding: 0,
         zIndex: 1000,
         display: 'flex',
@@ -365,163 +365,143 @@ const ChatBox = ({
           <div
             style={{
               backgroundColor: '#E8D5B7',
-              padding: '0.55rem 0.85rem',
+              padding: '0.6rem 0.85rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.45rem',
+              gap: '0.5rem',
               borderBottom: '1.5px solid var(--gold-brass)'
             }}
           >
-            {/* Categorías de filtro */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Zap size={14} color="#5C1D24" />
+            {/* Cabecera de la sección Frases Rápidas y botón expandir */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Zap size={15} color="#5C1D24" />
                 <span
                   style={{
                     fontFamily: 'var(--font-serif)',
-                    fontSize: '0.78rem',
+                    fontSize: '0.84rem',
                     fontWeight: '800',
                     color: '#4A121A'
                   }}
                 >
                   Frases Rápidas
                 </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
-                {Object.keys(QUICK_CATEGORIES).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    style={{
-                      fontSize: '0.7rem',
-                      fontFamily: 'var(--font-serif)',
-                      fontWeight: selectedCategory === cat ? '800' : '600',
-                      padding: '0.18rem 0.55rem',
-                      borderRadius: '999px',
-                      border: selectedCategory === cat ? '1.5px solid var(--gold-primary)' : '1px solid #C4B18F',
-                      backgroundColor: selectedCategory === cat ? 'var(--burgundy-primary)' : '#FAF4E5',
-                      color: selectedCategory === cat ? 'var(--text-gold-emboss)' : '#3F1015',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                <span style={{ fontSize: '0.72rem', color: '#6A4020', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
+                  ({currentPhrases.length})
+                </span>
               </div>
 
               <button
+                type="button"
                 onClick={() => setIsPhrasesExpanded((prev) => !prev)}
                 style={{
                   background: '#FAF4E5',
                   border: '1px solid var(--gold-brass)',
-                  borderRadius: '4px',
-                  padding: '2px 4px',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  color: '#4A121A'
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: 'bold',
+                  color: '#4A121A',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}
-                title={isPhrasesExpanded ? 'Ver compacto' : 'Ver todas las frases'}
+                title={isPhrasesExpanded ? 'Ver modo compacto' : 'Ver todas las frases'}
               >
-                {isPhrasesExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                <span>{isPhrasesExpanded ? 'Compactar' : 'Ver más'}</span>
+                {isPhrasesExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
               </button>
             </div>
 
-            {/* Listado de frases */}
-            {isPhrasesExpanded ? (
-              <div
-                style={{
-                  maxHeight: '160px',
-                  overflowY: 'auto',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-                  gap: '0.35rem',
-                  padding: '0.3rem 0'
-                }}
-              >
-                {currentPhrases.map((phrase, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => sendMessage(phrase)}
-                    style={{
-                      fontSize: '0.78rem',
-                      fontFamily: 'var(--font-serif)',
-                      fontWeight: '700',
-                      padding: '0.35rem 0.6rem',
-                      borderRadius: '8px',
-                      backgroundColor: '#FAF4E5',
-                      color: '#2C1A0E',
-                      border: '1.5px solid var(--gold-brass)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.12)',
-                      transition: 'all 0.15s'
-                    }}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#FFFDF8')}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#FAF4E5')}
-                  >
-                    {phrase}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
-                  {row1.map((phrase, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => sendMessage(phrase)}
-                      style={{
-                        whiteSpace: 'nowrap',
-                        fontSize: '0.78rem',
-                        fontFamily: 'var(--font-serif)',
-                        fontWeight: '700',
-                        padding: '0.32rem 0.75rem',
-                        borderRadius: '999px',
-                        backgroundColor: '#FAF4E5',
-                        color: '#2C1A0E',
-                        border: '1.5px solid var(--gold-brass)',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                        flexShrink: 0
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-                      onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      {phrase}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
-                  {row2.map((phrase, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => sendMessage(phrase)}
-                      style={{
-                        whiteSpace: 'nowrap',
-                        fontSize: '0.78rem',
-                        fontFamily: 'var(--font-serif)',
-                        fontWeight: '700',
-                        padding: '0.32rem 0.75rem',
-                        borderRadius: '999px',
-                        backgroundColor: '#FAF4E5',
-                        color: '#2C1A0E',
-                        border: '1.5px solid var(--gold-brass)',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                        flexShrink: 0
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-                      onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      {phrase}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Categorías de filtro en fila dedicada (sin barra gris nativa) */}
+            <div 
+              className="no-scrollbar"
+              style={{ 
+                display: 'flex', 
+                gap: '0.35rem', 
+                flexWrap: 'wrap', 
+                alignItems: 'center' 
+              }}
+            >
+              {Object.keys(QUICK_CATEGORIES).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  style={{
+                    fontSize: '0.74rem',
+                    fontFamily: 'var(--font-serif)',
+                    fontWeight: selectedCategory === cat ? '800' : '600',
+                    padding: '0.22rem 0.65rem',
+                    borderRadius: '999px',
+                    border: selectedCategory === cat ? '1.5px solid var(--gold-primary)' : '1px solid #C4B18F',
+                    backgroundColor: selectedCategory === cat ? 'var(--burgundy-primary)' : '#FAF4E5',
+                    color: selectedCategory === cat ? 'var(--text-gold-emboss)' : '#3F1015',
+                    cursor: 'pointer',
+                    boxShadow: selectedCategory === cat ? '0 2px 5px rgba(0,0,0,0.25)' : 'none',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Listado envolvente de frases (Texto completo, sin cortes) */}
+            <div
+              className="vintage-scrollbar"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.38rem',
+                maxHeight: isPhrasesExpanded ? '210px' : '98px',
+                overflowY: 'auto',
+                padding: '0.2rem 0.1rem',
+                transition: 'max-height 0.25s ease'
+              }}
+            >
+              {currentPhrases.map((phrase, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => sendMessage(phrase)}
+                  style={{
+                    fontSize: '0.8rem',
+                    fontFamily: 'var(--font-serif)',
+                    fontWeight: '700',
+                    padding: '0.34rem 0.72rem',
+                    borderRadius: '999px',
+                    backgroundColor: '#FAF4E5',
+                    color: '#2C1A0E',
+                    border: '1.5px solid var(--gold-brass)',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.12)',
+                    transition: 'all 0.15s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    lineHeight: 1.25,
+                    whiteSpace: 'normal',
+                    textAlign: 'left'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FFFFFF';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 3px 6px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FAF4E5';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.12)';
+                  }}
+                  title={`Enviar: "${phrase}"`}
+                >
+                  {phrase}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Formulario de Entrada */}
