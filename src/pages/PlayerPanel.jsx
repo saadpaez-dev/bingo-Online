@@ -1242,13 +1242,11 @@ const PlayerPanel = () => {
       {/* Comentarios y Reacciones en vivo estilo Streamer */}
       <LiveCommentsOverlay gameId={gameId} />
 
-      {/* HEADER DEL JUGADOR CON MARCADOR DE TORNEO */}
-      <div className="card flex justify-between items-center" style={{
-        padding: '0.85rem 1.5rem',
-        borderRadius: '12px',
-        border: '3px solid var(--burgundy-primary)'
-      }}>
-        <div className="flex items-center gap-3">
+      {/* HEADER DEL JUGADOR CON MARCADOR DE TORNEO Y ACCIONES ORGANIZADAS */}
+      <div className="player-header-card animate-pop">
+        
+        {/* ÁREA DE PERFIL: INICIO, AVATAR, NOMBRE, SALA Y ESTADO DE RONDA */}
+        <div className="player-header-profile">
           <button
             onClick={handleLeaveRoom}
             className="vintage-brass-plaque"
@@ -1256,29 +1254,32 @@ const PlayerPanel = () => {
               margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.55rem 1rem',
-              fontSize: '0.95rem'
+              justifyContent: 'center',
+              gap: '0.35rem',
+              padding: '0.45rem 0.75rem',
+              fontSize: '0.85rem',
+              flexShrink: 0
             }}
             title="Salir de la sala y volver al inicio"
           >
-            <Home size={17} />
+            <Home size={16} />
             <span className="mobile-hidden">Inicio</span>
           </button>
 
           <div style={{ 
-            width: '56px', 
-            height: '56px', 
+            width: '46px', 
+            height: '46px', 
             borderRadius: '50%', 
-            border: '2.5px solid var(--gold-primary)',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            border: '2px solid var(--gold-primary)',
+            boxShadow: '0 3px 6px rgba(0,0,0,0.3)',
             overflow: 'hidden',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            fontSize: '2.2rem',
+            fontSize: '1.8rem',
             background: 'radial-gradient(circle at 35% 30%, #7E252D 0%, var(--burgundy-primary) 100%)',
-            color: '#fff'
+            color: '#fff',
+            flexShrink: 0
           }}>
             {playerData?.isCustomAvatar ? (
               <img src={playerData.avatar} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1286,14 +1287,40 @@ const PlayerPanel = () => {
               playerData?.avatar || avatar
             )}
           </div>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', margin: 0, fontWeight: '800' }}>{name}</h2>
-            <div style={{ fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span className="vintage-brass-plaque" style={{ padding: '0.15rem 0.6rem', fontSize: '0.75rem', margin: 0 }}>
+
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+              <h2 style={{ 
+                fontFamily: 'var(--font-serif)', 
+                fontSize: 'clamp(1.1rem, 3.2vw, 1.35rem)', 
+                margin: 0, 
+                fontWeight: '900',
+                color: 'var(--text-vintage-dark)',
+                lineHeight: 1.2
+              }}>
+                {name}
+              </h2>
+              <span className="vintage-brass-plaque" style={{ 
+                padding: '0.12rem 0.55rem', 
+                fontSize: '0.72rem', 
+                margin: 0,
+                lineHeight: 1.3,
+                whiteSpace: 'nowrap'
+              }}>
                 Sala {gameId}
               </span>
+            </div>
+            <div style={{ 
+              fontSize: '0.78rem', 
+              display: 'flex', 
+              gap: '0.35rem', 
+              alignItems: 'center', 
+              flexWrap: 'wrap',
+              marginTop: '0.2rem',
+              color: 'var(--text-vintage-muted)'
+            }}>
               <span style={{ 
-                color: gameState.status === 'playing' ? 'var(--success)' : gameState.status === 'waiting' ? 'var(--burgundy-primary)' : 'var(--gold-dark)',
+                color: gameState.status === 'playing' ? '#15803D' : gameState.status === 'waiting' ? 'var(--burgundy-primary)' : 'var(--gold-dark)',
                 fontWeight: '700',
                 fontFamily: 'var(--font-serif)'
               }}>
@@ -1310,77 +1337,99 @@ const PlayerPanel = () => {
           </div>
         </div>
 
-        {/* Marcador de Victorias del Jugador en el Torneo o Modo Observador y Botón Carrera */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          
+        {/* ÁREA DE TROFEO / META DEL TORNEO O MODO OBSERVADOR */}
+        <div className="player-header-trophy">
+          {isSpectator ? (
+            <div style={{ textAlign: 'right' }}>
+              <span className="vintage-brass-plaque" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.65rem', fontSize: '0.78rem', margin: 0 }}>
+                <Eye size={14} /> Observador
+              </span>
+              <div style={{ fontSize: '0.68rem', color: '#15803D', fontWeight: 'bold', marginTop: '2px' }}>
+                ● En Vivo
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              textAlign: 'right',
+              background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.85) 0%, rgba(245, 230, 195, 0.65) 100%)',
+              border: '1.5px solid var(--gold-brass)',
+              borderRadius: '10px',
+              padding: '0.3rem 0.6rem',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end' }}>
+                <Trophy size={16} color="#C59B27" />
+                <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.15rem', color: 'var(--burgundy-primary)', lineHeight: 1 }}>
+                  {playerData?.wins || 0} / {targetWins}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '1px', whiteSpace: 'nowrap' }}>
+                Meta del Torneo
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ÁREA DE ACCIONES: RULETA/JAULA VISIBLE Y CARRERA AL BINGO */}
+        <div className="player-header-actions">
           {/* Botón para alternar si se proyecta la Ruleta o Jaula */}
           <button
+            type="button"
             onClick={toggleShowDrawAnimation}
             className="vintage-brass-plaque animate-pop"
             style={{
               cursor: 'pointer',
-              padding: '0.4rem 0.75rem',
+              padding: '0.45rem 0.65rem',
               fontSize: '0.82rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.35rem',
+              justifyContent: 'center',
+              gap: '0.4rem',
               backgroundColor: showDrawAnimation ? '#FAF4E5' : '#EFE1C6',
               color: '#3A1015',
-              border: showDrawAnimation ? '1px solid var(--gold-primary)' : '1px dashed #8C6B23'
+              border: showDrawAnimation ? '1.5px solid var(--gold-primary)' : '1.5px dashed #8C6B23',
+              width: '100%',
+              margin: 0,
+              boxSizing: 'border-box'
             }}
             title={showDrawAnimation ? `Animación activa: Se proyecta la ${gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'} al salir cada balota. Clic para ocultar.` : `Animación desactivada: Solo verás tu cartón directamente sin interrupciones. Clic para activar.`}
           >
             {showDrawAnimation ? <Eye size={15} color="#15803D" /> : <EyeOff size={15} color="#8D6E63" />}
-            <span>
-              {gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'}: {showDrawAnimation ? 'Visible' : 'Oculta'}
+            <span style={{ whiteSpace: 'nowrap' }}>
+              {gameState.drawMachine === 'cage' ? 'Jaula' : 'Ruleta'}: <strong>{showDrawAnimation ? 'Visible' : 'Oculta'}</strong>
             </span>
           </button>
 
           {/* Botón para abrir la Carrera hacia el Bingo (Consultar rivales y cerrar) */}
           {playingPlayers.length > 0 && (
             <button
+              type="button"
               onClick={() => setShowRaceModal(true)}
               className="vintage-brass-plaque animate-pop"
               style={{
                 cursor: 'pointer',
-                padding: '0.4rem 0.75rem',
+                padding: '0.45rem 0.65rem',
                 fontSize: '0.82rem',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.35rem',
+                justifyContent: 'center',
+                gap: '0.4rem',
                 backgroundColor: '#FAF4E5',
-                color: '#3A1015'
+                color: '#3A1015',
+                width: '100%',
+                margin: 0,
+                boxSizing: 'border-box'
               }}
               title="Consultar cómo van tus rivales hacia el Bingo"
             >
-              <Flame size={16} color="#E65100" />
-              <span>Carrera al Bingo</span>
+              <Flame size={15} color="#E65100" />
+              <span style={{ whiteSpace: 'nowrap' }}>
+                Carrera al Bingo
+              </span>
             </button>
           )}
-
-          {isSpectator ? (
-            <div style={{ textAlign: 'right' }}>
-              <span className="vintage-brass-plaque" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}>
-                <Eye size={15} /> Modo Observador
-              </span>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic', marginTop: '0.2rem' }}>
-                En Vivo
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
-                <Trophy size={18} color="#C59B27" />
-                <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '900', fontSize: '1.2rem', color: 'var(--burgundy-primary)' }}>
-                  {playerData?.wins || 0} / {targetWins}
-                </span>
-              </div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-vintage-muted)', fontStyle: 'italic' }}>
-                Meta del Torneo
-              </span>
-            </div>
-          )}
         </div>
+
       </div>
 
       {/* =========================================================
@@ -1953,8 +2002,8 @@ const PlayerPanel = () => {
               {/* Barra de Reacciones para el Live Streaming */}
               <div style={{ 
                 display: 'flex', 
-                gap: '0.85rem', 
-                padding: '0.45rem 1.25rem', 
+                gap: 'clamp(0.4rem, 1.8vw, 0.85rem)', 
+                padding: '0.35rem clamp(0.6rem, 2vw, 1.25rem)', 
                 borderRadius: '999px',
                 background: 'linear-gradient(180deg, #F4E7CB 0%, #E6D2AE 100%)',
                 border: '2px solid var(--gold-brass)',
@@ -1968,10 +2017,11 @@ const PlayerPanel = () => {
                     style={{
                       background: 'none', 
                       border: 'none', 
-                      fontSize: '1.6rem', 
+                      fontSize: 'clamp(1.25rem, 4.2vw, 1.6rem)', 
                       cursor: 'pointer',
                       transition: 'transform 0.15s',
-                      lineHeight: 1
+                      lineHeight: 1,
+                      padding: 0
                     }}
                     onMouseOver={e => e.currentTarget.style.transform = 'scale(1.3)'}
                     onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}

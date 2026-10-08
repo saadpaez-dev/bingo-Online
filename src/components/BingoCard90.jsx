@@ -28,7 +28,7 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
       margin: '0 auto',
       userSelect: 'none',
       background: 'radial-gradient(ellipse at center, #FAF4E5 0%, #F4E7CB 80%, #E6D2AE 100%)',
-      padding: '1.25rem',
+      padding: 'clamp(0.6rem, 2.5vw, 1.25rem)',
       borderRadius: '12px',
       border: '3px solid var(--burgundy-primary)',
       boxShadow: '0 12px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(140, 107, 35, 0.25)',
@@ -50,8 +50,8 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '0.45rem',
-        marginBottom: '0.55rem',
+        gap: 'clamp(0.25rem, 1.2vw, 0.45rem)',
+        marginBottom: 'clamp(0.3rem, 1.3vw, 0.55rem)',
         position: 'relative',
         zIndex: 2
       }}>
@@ -61,9 +61,9 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
             color: 'var(--text-gold-emboss)',
             fontFamily: 'var(--font-serif)',
             fontWeight: '800',
-            fontSize: '0.85rem',
+            fontSize: 'clamp(0.72rem, 2.4vw, 0.85rem)',
             textAlign: 'center',
-            padding: '0.5rem 0',
+            padding: 'clamp(0.35rem, 1.4vw, 0.5rem) 0',
             borderRadius: '8px',
             border: '2px solid var(--gold-primary)',
             boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3)',
@@ -79,8 +79,8 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
         <div key={rIndex} style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '0.45rem',
-          marginBottom: '0.45rem',
+          gap: 'clamp(0.25rem, 1.2vw, 0.45rem)',
+          marginBottom: 'clamp(0.25rem, 1.2vw, 0.45rem)',
           position: 'relative',
           zIndex: 2
         }}>
@@ -102,7 +102,7 @@ const BingoCard90 = ({ grid, markedNumbers, toggleMark, calledNumbers }) => {
                   borderRadius: '10px',
                   fontFamily: 'var(--font-serif)',
                   fontWeight: '800',
-                  fontSize: '1.45rem',
+                  fontSize: 'clamp(1.1rem, 3.6vw, 1.45rem)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
 

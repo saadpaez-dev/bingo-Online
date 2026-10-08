@@ -127,6 +127,13 @@ body::before {
   gap: 1.5rem;
 }
 
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0.75rem 0.5rem 2.5rem;
+    gap: 1rem;
+  }
+}
+
 /* =========================================================
    TARJETA DE PERGAMINO VINTAGE (ESTILO IMAGEN)
    ========================================================= */
@@ -744,6 +751,68 @@ button.vintage-brass-plaque:focus-visible {
 @media (max-width: 991px) {
   .mobile-hidden {
     display: none !important;
+  }
+}
+
+/* =========================================================
+   CABECERA ADAPTATIVA DEL JUGADOR / SOCIO (MÓVIL Y ESCRITORIO)
+   ========================================================= */
+.player-header-card {
+  display: grid;
+  grid-template-areas:
+    "profile trophy"
+    "actions actions";
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.65rem 0.75rem;
+  padding: 0.75rem 0.95rem;
+  border-radius: 12px;
+  border: 3px solid var(--burgundy-primary);
+  background: radial-gradient(ellipse at center, #FFFDF9 0%, #F8EED9 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  margin-bottom: 1.25rem;
+}
+
+.player-header-profile {
+  grid-area: profile;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.player-header-trophy {
+  grid-area: trophy;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.player-header-actions {
+  grid-area: actions;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(139, 107, 61, 0.22);
+}
+
+@media (min-width: 992px) {
+  .player-header-card {
+    grid-template-areas: "profile actions trophy";
+    grid-template-columns: 1fr auto auto;
+    gap: 1.25rem;
+    padding: 0.95rem 1.6rem;
+  }
+
+  .player-header-actions {
+    display: flex;
+    width: auto;
+    padding-top: 0;
+    border-top: none;
+    gap: 0.65rem;
   }
 }
 
