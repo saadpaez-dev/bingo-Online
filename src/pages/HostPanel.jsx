@@ -15,7 +15,8 @@ import { BINGO_PATTERNS } from '../utils/bingo';
 import bgTable from '../assets/bg-table.jpg';
 
 const HostPanel = () => {
-  const { gameId } = useParams();
+  const { gameId: rawGameId } = useParams();
+  const gameId = (rawGameId || '').trim().toUpperCase();
   const navigate = useNavigate();
   const [gameState, setGameState] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -432,10 +433,10 @@ const HostPanel = () => {
   }, [autoDrawInterval]);
 
   const getShareUrl = () => {
-    // Si estamos en cualquier URL de Vercel (especialmente vistas previas de equipo con hash que exigen login),
-    // forzamos el dominio oficial de producción público (bingo-online-six.vercel.app)
-    // para que ningún jugador tenga que iniciar sesión en Vercel.
-    if (window.location.hostname.includes('vercel.app')) {
+    // Si estamos en localhost o en cualquier entorno de Vercel, el enlace de invitación
+    // siempre apunta al dominio oficial público (bingo-online-six.vercel.app)
+    // para que cualquier participante en WhatsApp o móvil pueda ingresar directamente.
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('vercel.app')) {
       return `https://bingo-online-six.vercel.app/play/${gameId}`;
     }
     return `${window.location.origin}/play/${gameId}`;

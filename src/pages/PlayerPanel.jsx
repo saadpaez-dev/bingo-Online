@@ -40,7 +40,8 @@ const FiligreeCorner = ({ position }) => (
 );
 
 const PlayerPanel = () => {
-  const { gameId } = useParams();
+  const { gameId: rawGameId } = useParams();
+  const gameId = useMemo(() => (rawGameId || '').trim().toUpperCase(), [rawGameId]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedRole = searchParams.get('role'); // 'spectator'
@@ -51,6 +52,17 @@ const PlayerPanel = () => {
   const [markedNumbers, setMarkedNumbers] = useState(new Set());
   const [userId, setUserId] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
+  const nameRef = useRef(name);
+  useEffect(() => {
+    nameRef.current = name;
+  }, [name]);
+
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
   
   const { playSound } = useSettings();
 
@@ -180,50 +192,87 @@ const PlayerPanel = () => {
 
   // Escucha del estado del juego en tiempo real (games/{gameId})
   useEffect(() => {
-    if (!gameId) return;
+    if (!gameId) {
+      setErrorMsg('Código de sala no válido.');
+      return;
+    }
 
     const gameRef = doc(db, 'games', gameId);
-    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setGameState(data);
-        
-        if (data.calledNumbers && data.status === 'playing') {
-          if (lastCalledCountRef.current === -1) {
-            lastCalledCountRef.current = data.calledNumbers.length;
-          } else if (data.calledNumbers.length > lastCalledCountRef.current) {
-            playSound('pop');
-            lastCalledCountRef.current = data.calledNumbers.length;
-          }
-        }
+    let isSubscribed = true;
 
-        if (data.status === 'finished' && data.winners?.includes(name)) {
-          if (!winAnimationPlayedRef.current) {
-            winAnimationPlayedRef.current = true;
-            triggerWinAnimation();
+    const unsubscribe = onSnapshot(
+      gameRef,
+      (docSnap) => {
+        if (!isSubscribed) return;
+        if (docSnap.exists()) {
+          // Limpiar inmediatamente cualquier error previo
+          setErrorMsg('');
+          const data = docSnap.data();
+          setGameState(data);
+          
+          if (data.calledNumbers && data.status === 'playing') {
+            if (lastCalledCountRef.current === -1) {
+              lastCalledCountRef.current = data.calledNumbers.length;
+            } else if (data.calledNumbers.length > lastCalledCountRef.current) {
+              playSound('pop');
+              lastCalledCountRef.current = data.calledNumbers.length;
+            }
           }
-        } else if (data.status !== 'finished') {
-          winAnimationPlayedRef.current = false;
-        }
 
-        // Si el anfitrión inició nueva ronda o limpió balotas (waiting con 0 balotas)
-        if (data.status === 'waiting' && (!data.calledNumbers || data.calledNumbers.length === 0)) {
-          setMarkedNumbers(new Set());
-          lastCalledCountRef.current = 0;
-          if (userId) {
-            try {
-              localStorage.removeItem(`bingo_marked_${gameId}_${userId}`);
-            } catch (e) {}
+          if (data.status === 'finished' && data.winners?.includes(nameRef.current)) {
+            if (!winAnimationPlayedRef.current) {
+              winAnimationPlayedRef.current = true;
+              triggerWinAnimation();
+            }
+          } else if (data.status !== 'finished') {
+            winAnimationPlayedRef.current = false;
           }
-        }
 
-      } else {
-        setErrorMsg('La sala no existe.');
+          // Si el anfitrión inició nueva ronda o limpió balotas (waiting con 0 balotas)
+          if (data.status === 'waiting' && (!data.calledNumbers || data.calledNumbers.length === 0)) {
+            setMarkedNumbers(new Set());
+            lastCalledCountRef.current = 0;
+            if (userIdRef.current) {
+              try {
+                localStorage.removeItem(`bingo_marked_${gameId}_${userIdRef.current}`);
+              } catch (e) {}
+            }
+          }
+        } else {
+          // Si proviene de la memoria caché local y el servidor aún no ha respondido, no reportar error de inmediato
+          if (docSnap.metadata?.fromCache) {
+            return;
+          }
+          setErrorMsg('La sala no existe o ha sido cerrada.');
+        }
+      },
+      (error) => {
+        if (!isSubscribed) return;
+        console.warn('Error en onSnapshot de la sala:', error);
+        // Fallback usando getDoc directo en caso de problemas con WebSockets o bloqueadores
+        getDoc(gameRef)
+          .then((snap) => {
+            if (!isSubscribed) return;
+            if (snap.exists()) {
+              setErrorMsg('');
+              setGameState(snap.data());
+            } else {
+              setErrorMsg('La sala no existe o ha sido cerrada.');
+            }
+          })
+          .catch((err) => {
+            if (!isSubscribed) return;
+            console.error('Error en fallback getDoc:', err);
+            setErrorMsg('No se pudo conectar a la sala. Si tienes un bloqueador de anuncios o escudos de Brave activos, por favor desactívalos para permitir la conexión.');
+          });
       }
-    });
+    );
 
-    return () => unsubscribe();
-  }, [gameId, name, playSound, triggerWinAnimation, userId]);
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
+  }, [gameId, retryTrigger, playSound, triggerWinAnimation]);
 
   // Listener de los datos del jugador en tiempo real
   useEffect(() => {
@@ -588,8 +637,134 @@ const PlayerPanel = () => {
     }
   };
 
-  if (errorMsg) return <div className="text-center mt-4" style={{ color: '#fff' }}><h3>{errorMsg}</h3></div>;
-  if (!gameState) return <div className="text-center mt-4" style={{ color: '#fff' }}>Cargando sala...</div>;
+  if (errorMsg) {
+    return (
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.4) 0%, rgba(10, 4, 2, 0.82) 100%), url(${bgTable})`
+        }}
+      >
+        <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '90vh', padding: '1rem' }}>
+          <div className="vintage-parchment-card animate-pop text-center" style={{ maxWidth: '480px', padding: '2.5rem 2rem' }}>
+            <FiligreeCorner position="top-left" />
+            <FiligreeCorner position="top-right" />
+            <FiligreeCorner position="bottom-left" />
+            <FiligreeCorner position="bottom-right" />
+
+            <div style={{
+              width: '75px',
+              height: '75px',
+              borderRadius: '50%',
+              margin: '0 auto 1.25rem',
+              background: 'radial-gradient(circle at 35% 30%, #8b2834 0%, var(--burgundy-primary) 60%, var(--burgundy-dark) 100%)',
+              border: '3px solid var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.2rem',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.35)'
+            }}>
+              ⚠️
+            </div>
+
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', color: 'var(--burgundy-primary)', fontWeight: '900', margin: '0 0 0.6rem' }}>
+              Sala no disponible
+            </h2>
+
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(92, 29, 36, 0.08)',
+              border: '1.5px dashed var(--gold-brass)',
+              borderRadius: '8px',
+              padding: '0.45rem 1rem',
+              marginBottom: '1rem',
+              fontSize: '0.95rem',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 'bold',
+              color: 'var(--burgundy-primary)'
+            }}>
+              Código buscado: <span style={{ color: '#80141D', letterSpacing: '1.5px' }}>{gameId || 'Ninguno'}</span>
+            </div>
+
+            <p style={{ fontSize: '0.95rem', color: '#4A2810', lineHeight: 1.5, margin: '0 auto 1.5rem', maxWidth: '380px' }}>
+              {errorMsg}
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="vintage-brass-plaque"
+                onClick={() => {
+                  playSound('pop');
+                  setErrorMsg('');
+                  setRetryTrigger(prev => prev + 1);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.75rem 1.4rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={17} /> Reintentar
+              </button>
+
+              <button
+                type="button"
+                className="btn-vintage-burgundy"
+                onClick={() => {
+                  playSound('pop');
+                  navigate('/');
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.75rem 1.4rem',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <Home size={17} /> Volver al Inicio
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!gameState) {
+    return (
+      <div 
+        className="dealer-page-wrapper"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at center, rgba(30, 12, 6, 0.45) 0%, rgba(10, 4, 2, 0.8) 100%), url(${bgTable})`,
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '90vh',
+          display: 'flex'
+        }}
+      >
+        <div className="vintage-parchment-card text-center animate-pop" style={{ maxWidth: '360px', padding: '2.5rem 2rem' }}>
+          <FiligreeCorner position="top-left" />
+          <FiligreeCorner position="top-right" />
+          <FiligreeCorner position="bottom-left" />
+          <FiligreeCorner position="bottom-right" />
+          <span style={{ fontSize: '2.5rem' }}>🎲</span>
+          <h3 style={{ fontFamily: 'var(--font-serif)', fontWeight: 'bold', marginTop: '0.75rem', color: 'var(--burgundy-primary)' }}>
+            Conectando a la Sala {gameId}...
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: '#6A4525', marginTop: '0.25rem' }}>
+            Preparando tu mesa en el Salón Vintage...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================================
   // ESTADO ESPECIAL: SALA CLAUSURADA O CERRADA POR EL ANFITRIÓN
