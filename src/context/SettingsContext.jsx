@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 
 const SettingsContext = createContext();
 
@@ -17,6 +17,11 @@ export const SettingsProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : true;
   });
 
+  const soundEnabledRef = useRef(soundEnabled);
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
   // Apply theme to body
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -33,12 +38,16 @@ export const SettingsProvider = ({ children }) => {
   };
 
   const toggleSound = () => {
-    setSoundEnabled(prev => !prev);
+    setSoundEnabled(prev => {
+      const next = !prev;
+      soundEnabledRef.current = next;
+      return next;
+    });
   };
 
   // Sound player helper
-  const playSound = (type) => {
-    if (!soundEnabled) return;
+  const playSound = useCallback((type) => {
+    if (!soundEnabledRef.current) return;
     
     let audioSrc = '';
     switch (type) {
@@ -61,7 +70,7 @@ export const SettingsProvider = ({ children }) => {
     const audio = new Audio(audioSrc);
     audio.volume = 0.5;
     audio.play().catch(e => console.log("Audio play blocked by browser interaction policy"));
-  };
+  }, []);
 
   return (
     <SettingsContext.Provider value={{ theme, toggleTheme, soundEnabled, toggleSound, playSound }}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Clock } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 // Generador de casillas para 75 o 90 bolas intercalando letras y columnas
 const generatePockets = (mode) => {
@@ -63,6 +64,12 @@ const VintageRoulette = ({
   const [revealedBall, setRevealedBall] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  const { soundEnabled } = useSettings();
+  const soundEnabledRef = useRef(soundEnabled);
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
   const audioCtxRef = useRef(null);
   const animFrameRef = useRef(null);
   const lastClickTimeRef = useRef(0);
@@ -84,6 +91,7 @@ const VintageRoulette = ({
   };
 
   const playClickSound = (volume = 0.25) => {
+    if (!soundEnabledRef.current) return;
     const ctx = getAudioContext();
     if (!ctx) return;
     try {
@@ -104,6 +112,7 @@ const VintageRoulette = ({
   };
 
   const playChimeSound = () => {
+    if (!soundEnabledRef.current) return;
     const ctx = getAudioContext();
     if (!ctx) return;
     try {

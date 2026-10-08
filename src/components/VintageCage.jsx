@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Clock } from 'lucide-react';
 import cageImg from '../assets/vintage-bingo-cage.jpg';
+import { useSettings } from '../context/SettingsContext';
 
 const getBallLetter = (num, mode) => {
   if (mode !== 75) return '';
@@ -33,6 +34,12 @@ const VintageCage = ({
   const [cageTumble, setCageTumble] = useState(0);
   const [chuteBallProgress, setChuteBallProgress] = useState(0); // 0: inside, 1: rolled into portal
   const [revealedBall, setRevealedBall] = useState(null);
+
+  const { soundEnabled } = useSettings();
+  const soundEnabledRef = useRef(soundEnabled);
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   const audioCtxRef = useRef(null);
   const animFrameRef = useRef(null);
@@ -66,6 +73,7 @@ const VintageCage = ({
 
   // Sonido de choque de bolas de madera y trinquete metálico
   const playCrankTick = (vol = 0.22) => {
+    if (!soundEnabledRef.current) return;
     const ctx = getAudioContext();
     if (!ctx) return;
     try {
@@ -89,6 +97,7 @@ const VintageCage = ({
 
   // Sonido de rodada por el canal de latón
   const playChuteRoll = () => {
+    if (!soundEnabledRef.current) return;
     const ctx = getAudioContext();
     if (!ctx) return;
     try {
@@ -110,6 +119,7 @@ const VintageCage = ({
 
   // Campana triunfal al encajar en el portal
   const playChimeSound = () => {
+    if (!soundEnabledRef.current) return;
     const ctx = getAudioContext();
     if (!ctx) return;
     try {
